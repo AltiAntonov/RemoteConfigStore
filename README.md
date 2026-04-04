@@ -12,6 +12,7 @@
     <a href="#quick-start">Quick Start</a> ·
     <a href="#read-policies">Read Policies</a> ·
     <a href="#freshness-model">Freshness Model</a> ·
+    <a href="#errors">Errors</a> ·
     <a href="#example-app">Example App</a> ·
     <a href="#testing">Testing</a> ·
     <a href="#roadmap">Roadmap</a>
@@ -132,6 +133,19 @@ That creates three states:
 
 3. `expired and unusable`
    The cache is older than both windows and must not be used as a fallback.
+
+## Errors
+
+`RemoteConfigStore` keeps its store-specific error surface intentionally small.
+
+- `RemoteConfigStoreError.noCachedSnapshot`: returned when neither memory nor disk cache contains a snapshot
+
+Other failures are propagated from the underlying component that failed:
+
+- `refresh()` and `snapshot(using:)` can throw the injected fetcher's error
+- `refresh()` can throw cache persistence or file-system errors from disk writes
+- `cachedSnapshot()` can throw file-system or decoding errors while loading from disk
+- `RemoteConfigStore.init(...)` can throw when the cache directory cannot be prepared
 
 ## Example App
 
