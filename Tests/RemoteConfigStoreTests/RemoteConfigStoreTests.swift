@@ -53,4 +53,31 @@ final class RemoteConfigStoreTests: XCTestCase {
         XCTAssertTrue(policy.isWithinMaxStaleAge(staleEntry, now: now))
         XCTAssertFalse(policy.isUsable(expiredEntry, now: now))
     }
+
+    func testMemoryCacheStoresAndReturnsEntry() async {
+        let cache = MemoryCache<String, RemoteConfigSnapshot>()
+        let entry = CacheEntry(
+            value: RemoteConfigSnapshot(values: ["new_ui": .bool(true)]),
+            expirationDate: Date().addingTimeInterval(60)
+        )
+
+        await cache.set(entry, for: "default")
+        let loaded = await cache.entry(for: "default")
+
+        XCTAssertEqual(loaded, entry)
+    }
+
+    func testDiskCachePersistsEntryToDisk() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let cache = try DiskCache(directory: directory)
+        let entry = CacheEntry(
+            value: RemoteConfigSnapshot(values: ["new_ui": .bool(true)]),
+            expirationDate: Date(timeIntervalSince1970: 500)
+        )
+
+        try cache.save(entry, for: "default")
+        let loaded = try cache.load(for: "default")
+
+        XCTAssertEqual(loaded, entry)
+    }
 }
