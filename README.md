@@ -267,22 +267,4 @@ Run the package tests with:
 swift test
 ```
 
-## Roadmap
-
-### `v0.1`
-
-- typed primitive values
-- memory and disk cache
-- TTL and optional stale fallback
-- soft recovery from corrupted persisted cache files
-- injected fetcher protocol
-- policy-based reads
-
-### Later
-
-- built-in HTTP client
-- ETag support
-- version diffing
-- observers / change streams
-- metrics and analytics hooks
-- nested consumer-defined model decoding
+See [CHANGELOG.md](CHANGELOG.md) for released changes.
