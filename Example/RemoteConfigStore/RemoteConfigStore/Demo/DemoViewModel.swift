@@ -20,6 +20,21 @@ final class DemoViewModel {
         let value: String
     }
 
+    struct TypedValues: Equatable {
+        let newUIEnabled: Bool
+        let welcomeMessage: String
+        let requestTimeoutMilliseconds: Int
+        let rolloutFraction: Double
+    }
+
+    enum DemoKeys {
+        static let configRevision = RemoteConfigKey<Int>("config_revision", defaultValue: 0)
+        static let newUIEnabled = RemoteConfigKey<Bool>("feature.new_ui", defaultValue: false)
+        static let welcomeMessage = RemoteConfigKey<String>("welcome_message", defaultValue: "No message loaded yet.")
+        static let requestTimeoutMilliseconds = RemoteConfigKey<Int>("request_timeout_ms", defaultValue: 0)
+        static let rolloutFraction = RemoteConfigKey<Double>("rollout_fraction", defaultValue: 0)
+    }
+
     private let fetcher = DemoRemoteConfigFetcher()
     private var store: RemoteConfigStore?
     private var backgroundSyncTask: Task<Void, Never>?
@@ -31,6 +46,7 @@ final class DemoViewModel {
     var statusMessage = "Load a policy to see the cache behavior."
     var errorMessage: String?
     var displayedSnapshot: RemoteConfigSnapshot?
+    var typedValues: TypedValues?
     var currentRevision = 1
     var remoteRevision = 1
     var fetchCount = 0
@@ -98,6 +114,7 @@ final class DemoViewModel {
 
             let snapshot = try await store?.refresh() ?? RemoteConfigSnapshot(values: [:])
             await syncBackendState()
+            typedValues = try await resolveTypedValues(using: .immediate)
             apply(snapshot: snapshot, policy: .refreshBeforeReturning, source: "Manual refresh")
         } catch {
             errorMessage = error.localizedDescription
@@ -118,6 +135,7 @@ final class DemoViewModel {
         do {
             let snapshot = try await store?.snapshot(using: policy) ?? RemoteConfigSnapshot(values: [:])
             await syncBackendState()
+            typedValues = try await resolveTypedValues(using: policy)
             apply(snapshot: snapshot, policy: policy, source: Self.policyLabel(for: policy))
 
             if policy == .immediateWithBackgroundRefresh {
@@ -163,7 +181,7 @@ final class DemoViewModel {
         do {
             if let snapshot = try await store?.cachedSnapshot() {
                 displayedSnapshot = snapshot
-                currentRevision = snapshot.values["config_revision"]?.intValue ?? currentRevision
+                typedValues = try await resolveTypedValues(using: .immediate)
                 lastLoadedAt = Date()
                 statusMessage = "Background refresh updated the cache to revision \(currentRevision)."
             }
@@ -198,6 +216,32 @@ final class DemoViewModel {
         fetchCount = await fetcher.currentFetchCount()
     }
 
+    private func resolveTypedValues(using policy: ReadPolicy) async throws -> TypedValues {
+        guard let store else {
+            return TypedValues(
+                newUIEnabled: DemoKeys.newUIEnabled.defaultValue,
+                welcomeMessage: DemoKeys.welcomeMessage.defaultValue,
+                requestTimeoutMilliseconds: DemoKeys.requestTimeoutMilliseconds.defaultValue,
+                rolloutFraction: DemoKeys.rolloutFraction.defaultValue
+            )
+        }
+
+        async let newUIEnabled = store.bool(for: DemoKeys.newUIEnabled, using: policy)
+        async let welcomeMessage = store.string(for: DemoKeys.welcomeMessage, using: policy)
+        async let requestTimeoutMilliseconds = store.int(for: DemoKeys.requestTimeoutMilliseconds, using: policy)
+        async let rolloutFraction = store.double(for: DemoKeys.rolloutFraction, using: policy)
+        async let configRevision = store.int(for: DemoKeys.configRevision, using: policy)
+
+        let resolvedValues = try await TypedValues(
+            newUIEnabled: newUIEnabled,
+            welcomeMessage: welcomeMessage,
+            requestTimeoutMilliseconds: requestTimeoutMilliseconds,
+            rolloutFraction: rolloutFraction
+        )
+        currentRevision = try await configRevision
+        return resolvedValues
+    }
+
     private static func policyLabel(for policy: ReadPolicy) -> String {
         switch policy {
         case .immediate:
@@ -210,6 +254,19 @@ final class DemoViewModel {
     }
 
     var displayedRows: [DisplayRow] {
+        guard let typedValues else {
+            return []
+        }
+
+        return [
+            DisplayRow(id: DemoKeys.newUIEnabled.name, title: DemoKeys.newUIEnabled.name, value: typedValues.newUIEnabled ? "true" : "false"),
+            DisplayRow(id: DemoKeys.welcomeMessage.name, title: DemoKeys.welcomeMessage.name, value: typedValues.welcomeMessage),
+            DisplayRow(id: DemoKeys.requestTimeoutMilliseconds.name, title: DemoKeys.requestTimeoutMilliseconds.name, value: "\(typedValues.requestTimeoutMilliseconds)"),
+            DisplayRow(id: DemoKeys.rolloutFraction.name, title: DemoKeys.rolloutFraction.name, value: String(format: "%.2f", typedValues.rolloutFraction))
+        ]
+    }
+
+    var snapshotRows: [DisplayRow] {
         guard let snapshot = displayedSnapshot else {
             return []
         }

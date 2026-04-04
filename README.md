@@ -2,8 +2,12 @@
   <h1>RemoteConfigStore</h1>
   <p><strong>Offline-first remote config caching with TTL, stale fallback, and typed keys.</strong></p>
   <p>
-    <img src="https://img.shields.io/badge/Swift-6.0%2B-F05138" alt="Swift 6.0+">
-    <img src="https://img.shields.io/badge/Platforms-iOS%2017%2B%20%7C%20macOS%2014%2B-0A84FF" alt="Platforms">
+    <a href="https://swiftpackageindex.com/AltiAntonov/RemoteConfigStore">
+      <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FAltiAntonov%2FRemoteConfigStore%2Fbadge%3Ftype%3Dswift-versions" alt="Swift version compatibility">
+    </a>
+    <a href="https://swiftpackageindex.com/AltiAntonov/RemoteConfigStore">
+      <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FAltiAntonov%2FRemoteConfigStore%2Fbadge%3Ftype%3Dplatforms" alt="Platform compatibility">
+    </a>
     <img src="https://img.shields.io/badge/License-MIT-34C759" alt="MIT License">
     <a href="https://github.com/AltiAntonov/RemoteConfigStore/actions/workflows/swift.yml"><img src="https://github.com/AltiAntonov/RemoteConfigStore/actions/workflows/swift.yml/badge.svg" alt="Swift workflow"></a>
   </p>
@@ -11,6 +15,9 @@
     <a href="#features">Features</a> ·
     <a href="#installation">Installation</a> ·
     <a href="#quick-start">Quick Start</a> ·
+    <a href="#when-to-use-remoteconfigstore">When To Use</a> ·
+    <a href="#good-fits">Good Fits</a> ·
+    <a href="#weaker-fits">Weaker Fits</a> ·
     <a href="#read-policies">Read Policies</a> ·
     <a href="#freshness-model">Freshness Model</a> ·
     <a href="#errors">Errors</a> ·
@@ -46,7 +53,7 @@ Add `RemoteConfigStore` to your Swift Package Manager dependencies:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AltiAntonov/RemoteConfigStore.git", from: "0.1.0")
+    .package(url: "https://github.com/AltiAntonov/RemoteConfigStore.git", from: "0.1.1")
 ]
 ```
 
@@ -91,6 +98,36 @@ let store = try RemoteConfigStore(
 
 let enabled = try await store.value(for: AppConfigKeys.newUI, using: .immediate)
 ```
+
+## When To Use RemoteConfigStore
+
+Use `RemoteConfigStore` when an app needs server-driven values but should still behave predictably when the network is slow, unavailable, or temporarily failing.
+
+It is a strong fit for configuration that should be cached locally, refreshed deliberately, and read through a typed API instead of raw dictionaries spread across an app.
+
+## Good Fits
+
+- Feature flags and staged rollout controls
+  Example: [Feature Flags scenario](/Users/aantonov/Developer/Own/Packages/RemoteConfigStore/Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
+- Runtime tuning values such as request timeouts, polling intervals, and rollout percentages
+  Example: [Feature Flags scenario](/Users/aantonov/Developer/Own/Packages/RemoteConfigStore/Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
+- Remote text or copy that should remain available offline
+  Example: [Feature Flags scenario](/Users/aantonov/Developer/Own/Packages/RemoteConfigStore/Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
+- Safety switches and operational config that benefit from stale fallback instead of hard failure
+  Example soon
+- Apps that care about startup speed and want cache-first or stale-while-revalidate reads
+  Example: [Feature Flags scenario](/Users/aantonov/Developer/Own/Packages/RemoteConfigStore/Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
+
+## Weaker Fits
+
+- Deeply nested or highly structured configuration documents
+  Example soon
+- Cases where config must always be fresh and stale data is never acceptable
+  Example soon
+- Projects that need a built-in HTTP client, ETag validation, or observer streams today
+  Example soon
+- Data that is really user content or secure secret material rather than app configuration
+  Example soon
 
 ## Read Policies
 
@@ -169,12 +206,40 @@ Other failures are propagated from the underlying component that failed:
 
 The repository includes an Xcode example app in `Example/RemoteConfigStore`.
 
-The current demo shows:
+Current scenarios:
 
-- manual refreshes against a simulated backend
-- all three read policies
-- visible cache-versus-remote revision changes
-- background refresh behavior with a local persistent cache
+- `Feature Flags`
+  Code: [FeatureFlagsDemoView.swift](/Users/aantonov/Developer/Own/Packages/RemoteConfigStore/Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
+  Shows typed keys, all three read policies, manual refreshes, revision drift, and the difference between typed accessors and the raw cached payload.
+
+Planned scenarios:
+
+- `Offline Fallback` - Example soon
+- `HTTP Fetcher` - Example soon
+- `ETag Validation` - Example soon
+- `Observers And Metrics` - Example soon
+
+## Documentation
+
+The package now includes a DocC catalog in `Sources/RemoteConfigStore/RemoteConfigStore.docc`.
+
+Once Swift Package Index processes the `.spi.yml` manifest and the DocC catalog, hosted documentation should appear on the package page automatically.
+
+## Example Scenarios
+
+The example app is designed as one showcase application with multiple focused scenarios rather than many separate demo projects.
+
+Implemented:
+
+- `Feature Flags`
+  Code: [FeatureFlagsDemoView.swift](/Users/aantonov/Developer/Own/Packages/RemoteConfigStore/Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
+
+Coming later:
+
+- `Offline Fallback` - Example soon
+- `HTTP Fetcher` - Example soon
+- `ETag Validation` - Example soon
+- `Structured Payloads` - Example soon
 
 If you create a fresh example app manually in the future, recommended Xcode options are:
 

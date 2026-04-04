@@ -122,4 +122,26 @@ struct RemoteConfigStoreBehaviorTests {
         #expect(loaded == fresh)
         #expect(fetchCount == 1)
     }
+
+    @Test
+    func convenienceAccessorsReturnPrimitiveValuesForTypedKeys() async throws {
+        let snapshot = RemoteConfigSnapshot(values: [
+            "feature.new_ui": .bool(true),
+            "welcome_message": .string("Hello"),
+            "request_timeout_ms": .int(5000),
+            "rollout_fraction": .double(0.25)
+        ])
+        let fetcher = TestFetcher(result: .success(snapshot))
+        let store = try makeStore(fetcher: fetcher)
+
+        let boolValue = try await store.bool(for: .init("feature.new_ui", defaultValue: false))
+        let stringValue = try await store.string(for: .init("welcome_message", defaultValue: "Fallback"))
+        let intValue = try await store.int(for: .init("request_timeout_ms", defaultValue: 1000))
+        let doubleValue = try await store.double(for: .init("rollout_fraction", defaultValue: 1.0))
+
+        #expect(boolValue == true)
+        #expect(stringValue == "Hello")
+        #expect(intValue == 5000)
+        #expect(doubleValue == 0.25)
+    }
 }

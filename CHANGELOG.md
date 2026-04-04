@@ -2,6 +2,30 @@
 
 All notable changes to `RemoteConfigStore` will be documented in this file.
 
+## 0.2.0
+
+Developer ergonomics and documentation update.
+
+### Added
+
+- primitive convenience accessors on `RemoteConfigStore`
+- matching typed convenience accessors on `RemoteConfigSnapshot`
+- snapshot inspection helpers for age and freshness state
+- first DocC catalog with getting-started and read-policy articles
+- scenario-based example app shell with a dedicated `Feature Flags` showcase
+- Swift Package Index manifest metadata for hosted documentation
+
+### Changed
+
+- README now explains when the package is a strong fit and where it is weaker
+- README links directly to implemented example scenarios
+- the example app root screen is now a scenario navigator instead of a single all-in-one demo view
+
+### Fixed
+
+- example usage now exercises typed-key access more directly instead of leaning on raw snapshot inspection
+- package documentation and Swift Package Index metadata are aligned for public discovery
+
 ## 0.1.1
 
 Repository metadata and release-follow-up update.
