@@ -41,7 +41,15 @@ The public API is intentionally centered on:
 
 ## Installation
 
-Add `RemoteConfigStore` to your Swift Package Manager dependencies:
+Until `0.1.0` is tagged, add `RemoteConfigStore` by branch or revision:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/AltiAntonov/RemoteConfigStore.git", branch: "main")
+]
+```
+
+After the first release is tagged, switch to a semantic version requirement:
 
 ```swift
 dependencies: [
@@ -59,8 +67,6 @@ Then add the product to your target:
     ]
 )
 ```
-
-Until the first tagged release exists, use the local package directly in Xcode or pin to a branch or revision as needed.
 
 ## Quick Start
 
@@ -94,6 +100,12 @@ let enabled = try await store.value(for: AppConfigKeys.newUI, using: .immediate)
 ## Read Policies
 
 `RemoteConfigStore` currently supports three read policies:
+
+| Policy | Fresh cache | Stale but usable cache | No usable cache | Best fit |
+| --- | --- | --- | --- | --- |
+| `.immediate` | returns cache | returns cache | waits for refresh | fast UI reads |
+| `.refreshBeforeReturning` | returns cache | tries refresh first | waits for refresh | freshest possible values |
+| `.immediateWithBackgroundRefresh` | returns cache | returns cache and refreshes in background | waits for refresh | responsive reads with silent catch-up |
 
 ### `.immediate`
 
@@ -155,18 +167,19 @@ Other failures are propagated from the underlying component that failed:
 
 - `refresh()` and `snapshot(using:)` can throw the injected fetcher's error
 - `refresh()` can throw cache persistence or file-system errors from disk writes
-- `cachedSnapshot()` can throw file-system or decoding errors while loading from disk
+- `cachedSnapshot()` can throw file-system errors while loading from disk
 - `RemoteConfigStore.init(...)` can throw when the cache directory cannot be prepared
 
 ## Example App
 
-The repository contains an Xcode example app scaffold in `Example/RemoteConfigStore`.
+The repository includes an Xcode example app in `Example/RemoteConfigStore`.
 
-Current status:
+The current demo shows:
 
-- local package linkage is configured
-- the app is intentionally lightweight for now
-- the richer showcase behavior will be built incrementally later
+- manual refreshes against a simulated backend
+- all three read policies
+- visible cache-versus-remote revision changes
+- background refresh behavior with a local persistent cache
 
 If you create a fresh example app manually in the future, recommended Xcode options are:
 
@@ -201,6 +214,7 @@ swift test
 - typed primitive values
 - memory and disk cache
 - TTL and optional stale fallback
+- soft recovery from corrupted persisted cache files
 - injected fetcher protocol
 - policy-based reads
 
