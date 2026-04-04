@@ -50,4 +50,55 @@ struct RemoteConfigStoreBehaviorTests {
 
         #expect(value == false)
     }
+
+    @Test
+    func refreshSharesOneInFlightFetchAcrossConcurrentCallers() async throws {
+        let fetcher = ControlledFetcher()
+        let store = try makeStore(fetcher: fetcher)
+        let fresh = RemoteConfigSnapshot(values: ["new_ui": .bool(true)])
+
+        async let first = store.refresh()
+        async let second = store.refresh()
+
+        await fetcher.waitForFetchStart()
+        let fetchCountBeforeCompletion = await fetcher.fetchCount
+
+        await fetcher.succeed(with: fresh)
+
+        let firstSnapshot = try await first
+        let secondSnapshot = try await second
+        let finalFetchCount = await fetcher.fetchCount
+
+        #expect(fetchCountBeforeCompletion == 1)
+        #expect(finalFetchCount == 1)
+        #expect(firstSnapshot == fresh)
+        #expect(secondSnapshot == fresh)
+    }
+
+    @Test
+    func immediateWithBackgroundRefreshReturnsStaleSnapshotAndUpdatesCache() async throws {
+        let fetcher = ControlledFetcher()
+        let store = try makeStore(fetcher: fetcher, ttl: 1, maxStaleAge: 60)
+        let stale = RemoteConfigSnapshot(values: ["new_ui": .bool(false)], fetchedAt: Date().addingTimeInterval(-10))
+        let fresh = RemoteConfigSnapshot(values: ["new_ui": .bool(true)])
+
+        try await store.seedSnapshot(stale, fetchedAt: stale.fetchedAt)
+
+        let loaded = try await store.snapshot(using: .immediateWithBackgroundRefresh)
+
+        await fetcher.waitForFetchStart()
+        let fetchCountBeforeCompletion = await fetcher.fetchCount
+        await fetcher.succeed(with: fresh)
+
+        try await waitUntil {
+            let cached = try await store.cachedSnapshot()
+            return cached == fresh
+        }
+
+        let cachedSnapshot = try await store.cachedSnapshot()
+
+        #expect(loaded == stale)
+        #expect(fetchCountBeforeCompletion == 1)
+        #expect(cachedSnapshot == fresh)
+    }
 }
