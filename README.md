@@ -108,15 +108,15 @@ It is a strong fit for configuration that should be cached locally, refreshed de
 ## Good Fits
 
 - Feature flags and staged rollout controls
-  Example: [Feature Flags scenario](/Users/aantonov/Developer/Own/Packages/RemoteConfigStore/Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
+  Example: [Feature Flags scenario](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
 - Runtime tuning values such as request timeouts, polling intervals, and rollout percentages
-  Example: [Feature Flags scenario](/Users/aantonov/Developer/Own/Packages/RemoteConfigStore/Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
+  Example: [Feature Flags scenario](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
 - Remote text or copy that should remain available offline
-  Example: [Feature Flags scenario](/Users/aantonov/Developer/Own/Packages/RemoteConfigStore/Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
+  Example: [Feature Flags scenario](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
 - Safety switches and operational config that benefit from stale fallback instead of hard failure
   Example soon
 - Apps that care about startup speed and want cache-first or stale-while-revalidate reads
-  Example: [Feature Flags scenario](/Users/aantonov/Developer/Own/Packages/RemoteConfigStore/Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
+  Example: [Feature Flags scenario](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
 
 ## Weaker Fits
 
@@ -209,7 +209,7 @@ The repository includes an Xcode example app in `Example/RemoteConfigStore`.
 Current scenarios:
 
 - `Feature Flags`
-  Code: [FeatureFlagsDemoView.swift](/Users/aantonov/Developer/Own/Packages/RemoteConfigStore/Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
+  Code: [FeatureFlagsDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
   Shows typed keys, all three read policies, manual refreshes, revision drift, and the difference between typed accessors and the raw cached payload.
 
 Planned scenarios:
@@ -232,7 +232,7 @@ The example app is designed as one showcase application with multiple focused sc
 Implemented:
 
 - `Feature Flags`
-  Code: [FeatureFlagsDemoView.swift](/Users/aantonov/Developer/Own/Packages/RemoteConfigStore/Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
+  Code: [FeatureFlagsDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
 
 Coming later:
 
