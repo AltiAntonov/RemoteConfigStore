@@ -1,3 +1,12 @@
+//
+//  RemoteConfigSnapshot.swift
+//  RemoteConfigStore
+//
+//  Captures one fetched set of remote config values.
+//  Copyright (c) 2026 Altimir Antonov.
+//  Licensed under the MIT License. See LICENSE for details.
+//
+
 import Foundation
 
 public struct RemoteConfigSnapshot: Codable, Sendable, Equatable {

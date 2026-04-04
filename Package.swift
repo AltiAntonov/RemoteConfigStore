@@ -1,3 +1,12 @@
+//
+//  Package.swift
+//  RemoteConfigStore
+//
+//  Declares the RemoteConfigStore package and its targets.
+//  Copyright (c) 2026 Altimir Antonov.
+//  Licensed under the MIT License. See LICENSE for details.
+//
+
 // swift-tools-version: 6.0
 import PackageDescription
 

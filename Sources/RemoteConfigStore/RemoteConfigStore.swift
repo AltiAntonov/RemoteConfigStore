@@ -1,3 +1,12 @@
+//
+//  RemoteConfigStore.swift
+//  RemoteConfigStore
+//
+//  Coordinates cache lookup, refresh, and typed value access.
+//  Copyright (c) 2026 Altimir Antonov.
+//  Licensed under the MIT License. See LICENSE for details.
+//
+
 import Foundation
 
 public actor RemoteConfigStore {

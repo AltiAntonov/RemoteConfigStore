@@ -1,3 +1,12 @@
+//
+//  CacheEntry.swift
+//  RemoteConfigStore
+//
+//  Caches a value together with its expiration timestamp.
+//  Copyright (c) 2026 Altimir Antonov.
+//  Licensed under the MIT License. See LICENSE for details.
+//
+
 import Foundation
 
 public struct CacheEntry<Value: Codable & Sendable & Equatable>: Codable, Sendable, Equatable {

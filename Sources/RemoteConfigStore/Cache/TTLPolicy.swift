@@ -1,3 +1,12 @@
+//
+//  TTLPolicy.swift
+//  RemoteConfigStore
+//
+//  Evaluates freshness and stale eligibility for cached snapshots.
+//  Copyright (c) 2026 Altimir Antonov.
+//  Licensed under the MIT License. See LICENSE for details.
+//
+
 import Foundation
 
 public struct TTLPolicy: Sendable, Equatable {

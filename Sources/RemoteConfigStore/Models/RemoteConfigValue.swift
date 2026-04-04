@@ -1,3 +1,12 @@
+//
+//  RemoteConfigValue.swift
+//  RemoteConfigStore
+//
+//  Represents the primitive value types supported by the store.
+//  Copyright (c) 2026 Altimir Antonov.
+//  Licensed under the MIT License. See LICENSE for details.
+//
+
 import Foundation
 
 public enum RemoteConfigValue: Codable, Sendable, Equatable {

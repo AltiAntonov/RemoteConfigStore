@@ -1,3 +1,12 @@
+//
+//  MemoryCache.swift
+//  RemoteConfigStore
+//
+//  Stores cached snapshots in memory behind actor isolation.
+//  Copyright (c) 2026 Altimir Antonov.
+//  Licensed under the MIT License. See LICENSE for details.
+//
+
 import Foundation
 
 public actor MemoryCache<Key: Hashable & Sendable, Value: Codable & Sendable & Equatable> {

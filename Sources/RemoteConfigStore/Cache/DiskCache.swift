@@ -1,3 +1,12 @@
+//
+//  DiskCache.swift
+//  RemoteConfigStore
+//
+//  Persists cached snapshots to JSON files on disk.
+//  Copyright (c) 2026 Altimir Antonov.
+//  Licensed under the MIT License. See LICENSE for details.
+//
+
 import Foundation
 
 public struct DiskCache: Sendable {
