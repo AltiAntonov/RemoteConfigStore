@@ -62,4 +62,19 @@ struct RemoteConfigCacheTests {
 
         #expect(loaded == entry)
     }
+
+    @Test
+    func diskCacheTreatsCorruptedSnapshotAsCacheMissAndRemovesFile() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let cache = try DiskCache(directory: directory)
+        let fileURL = directory.appendingPathComponent("default.json")
+
+        try Data("not-json".utf8).write(to: fileURL, options: .atomic)
+
+        let loaded = try cache.load(for: "default")
+        let fileStillExists = FileManager.default.fileExists(atPath: fileURL.path)
+
+        #expect(loaded == nil)
+        #expect(fileStillExists == false)
+    }
 }

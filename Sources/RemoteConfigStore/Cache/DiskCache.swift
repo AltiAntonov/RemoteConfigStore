@@ -31,7 +31,12 @@ public struct DiskCache: Sendable {
 
         let decoder = JSONDecoder()
         let data = try Data(contentsOf: url)
-        return try decoder.decode(CacheEntry<RemoteConfigSnapshot>.self, from: data)
+        do {
+            return try decoder.decode(CacheEntry<RemoteConfigSnapshot>.self, from: data)
+        } catch is DecodingError {
+            try? FileManager.default.removeItem(at: url)
+            return nil
+        }
     }
 
     private func fileURL(for key: String) -> URL {

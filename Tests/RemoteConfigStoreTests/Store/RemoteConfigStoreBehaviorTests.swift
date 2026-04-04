@@ -101,4 +101,25 @@ struct RemoteConfigStoreBehaviorTests {
         #expect(fetchCountBeforeCompletion == 1)
         #expect(cachedSnapshot == fresh)
     }
+
+    @Test
+    func snapshotRefreshesWhenDiskCacheIsCorrupted() async throws {
+        let fresh = RemoteConfigSnapshot(values: ["new_ui": .bool(true)])
+        let fetcher = TestFetcher(result: .success(fresh))
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let fileURL = directory.appendingPathComponent("default.json")
+        let store = try RemoteConfigStore(
+            fetcher: fetcher,
+            cacheDirectory: directory,
+            ttl: 60
+        )
+
+        try Data("not-json".utf8).write(to: fileURL, options: .atomic)
+
+        let loaded = try await store.snapshot(using: .immediate)
+        let fetchCount = await fetcher.fetchCount
+
+        #expect(loaded == fresh)
+        #expect(fetchCount == 1)
+    }
 }
