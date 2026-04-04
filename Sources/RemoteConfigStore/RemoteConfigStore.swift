@@ -9,6 +9,7 @@
 
 import Foundation
 
+/// Coordinates cache lookup, refresh work, and typed value access for remote configuration.
 public actor RemoteConfigStore {
     private let fetcher: any RemoteConfigFetcher
     private let memoryCache = MemoryCache<String, RemoteConfigSnapshot>()
@@ -16,7 +17,17 @@ public actor RemoteConfigStore {
     private let ttlPolicy: TTLPolicy
     private let logger: any Logger
     private let cacheKey = "default"
+    private var refreshTask: Task<RemoteConfigSnapshot, Error>?
 
+    /// Creates a remote configuration store.
+    ///
+    /// - Parameters:
+    ///   - fetcher: The component responsible for loading fresh snapshots.
+    ///   - cacheDirectory: The directory used to persist cached snapshots.
+    ///   - ttl: The duration a fetched snapshot remains fresh.
+    ///   - maxStaleAge: The optional extra window in which stale data remains usable.
+    ///   - logger: The logger used for cache and refresh events.
+    /// - Throws: An error if the cache directory cannot be prepared.
     public init(
         fetcher: any RemoteConfigFetcher,
         cacheDirectory: URL,
@@ -30,7 +41,11 @@ public actor RemoteConfigStore {
         self.logger = logger
     }
 
-    public func snapshot() async throws -> RemoteConfigSnapshot {
+    /// Returns the currently cached snapshot.
+    ///
+    /// - Returns: The cached snapshot loaded from memory or disk.
+    /// - Throws: `RemoteConfigStoreError.noCachedSnapshot` when nothing is cached.
+    public func cachedSnapshot() async throws -> RemoteConfigSnapshot {
         if let entry = await memoryCache.entry(for: cacheKey) {
             return entry.value
         }
@@ -43,20 +58,46 @@ public actor RemoteConfigStore {
         throw RemoteConfigStoreError.noCachedSnapshot
     }
 
+    /// Forces a refresh and updates both memory and disk caches.
+    ///
+    /// Concurrent callers share a single in-flight refresh task.
+    ///
+    /// - Returns: The freshly fetched snapshot.
+    /// - Throws: An error describing why the refresh failed.
     public func refresh() async throws -> RemoteConfigSnapshot {
-        logger.log("Fetching remote config")
-        let snapshot = try await fetcher.fetch()
-        let entry = CacheEntry(
-            value: snapshot,
-            expirationDate: ttlPolicy.expirationDate(from: snapshot.fetchedAt)
-        )
+        if let refreshTask {
+            return try await refreshTask.value
+        }
 
-        await memoryCache.set(entry, for: cacheKey)
-        try diskCache.save(entry, for: cacheKey)
-        return snapshot
+        logger.log("Fetching remote config")
+        let task = Task {
+            try await fetcher.fetchSnapshot()
+        }
+        refreshTask = task
+
+        do {
+            let snapshot = try await task.value
+            let entry = CacheEntry(
+                value: snapshot,
+                expirationDate: ttlPolicy.expirationDate(from: snapshot.fetchedAt)
+            )
+
+            await memoryCache.set(entry, for: cacheKey)
+            try diskCache.save(entry, for: cacheKey)
+            refreshTask = nil
+            return snapshot
+        } catch {
+            refreshTask = nil
+            throw error
+        }
     }
 
-    public func load(policy: ReadPolicy) async throws -> RemoteConfigSnapshot {
+    /// Returns a snapshot using the supplied read policy.
+    ///
+    /// - Parameter policy: The strategy used to balance cached reads against refresh work.
+    /// - Returns: A snapshot selected according to the supplied policy.
+    /// - Throws: An error when no usable cached snapshot exists and refresh fails.
+    public func snapshot(using policy: ReadPolicy) async throws -> RemoteConfigSnapshot {
         let now = Date()
         let memoryEntry = await memoryCache.entry(for: cacheKey)
         let diskEntry = try diskCache.load(for: cacheKey)
@@ -75,7 +116,7 @@ public actor RemoteConfigStore {
                     return entry.value
                 }
                 return try await refresh()
-            case .waitForRefresh:
+            case .refreshBeforeReturning:
                 do {
                     return try await refresh()
                 } catch {
@@ -87,8 +128,10 @@ public actor RemoteConfigStore {
                 }
             case .immediateWithBackgroundRefresh:
                 if ttlPolicy.isUsable(entry, now: now) {
-                    Task {
-                        try? await self.refresh()
+                    if refreshTask == nil {
+                        Task {
+                            try? await self.refresh()
+                        }
                     }
                     return entry.value
                 }
@@ -99,27 +142,55 @@ public actor RemoteConfigStore {
         return try await refresh()
     }
 
-    public func value(for key: RemoteConfigKey<Bool>, policy: ReadPolicy = .immediate) async throws -> Bool {
-        let snapshot = try await load(policy: policy)
+    /// Returns a Boolean value for the supplied key.
+    ///
+    /// - Parameters:
+    ///   - key: The typed key to resolve.
+    ///   - policy: The strategy used to load the backing snapshot.
+    /// - Returns: The stored value or the key's default value.
+    /// - Throws: An error when no usable snapshot can be loaded.
+    public func value(for key: RemoteConfigKey<Bool>, using policy: ReadPolicy = .immediate) async throws -> Bool {
+        let snapshot = try await snapshot(using: policy)
         return snapshot.value(for: key.name)?.boolValue ?? key.defaultValue
     }
 
-    public func value(for key: RemoteConfigKey<Int>, policy: ReadPolicy = .immediate) async throws -> Int {
-        let snapshot = try await load(policy: policy)
+    /// Returns an integer value for the supplied key.
+    ///
+    /// - Parameters:
+    ///   - key: The typed key to resolve.
+    ///   - policy: The strategy used to load the backing snapshot.
+    /// - Returns: The stored value or the key's default value.
+    /// - Throws: An error when no usable snapshot can be loaded.
+    public func value(for key: RemoteConfigKey<Int>, using policy: ReadPolicy = .immediate) async throws -> Int {
+        let snapshot = try await snapshot(using: policy)
         return snapshot.value(for: key.name)?.intValue ?? key.defaultValue
     }
 
-    public func value(for key: RemoteConfigKey<Double>, policy: ReadPolicy = .immediate) async throws -> Double {
-        let snapshot = try await load(policy: policy)
+    /// Returns a floating-point value for the supplied key.
+    ///
+    /// - Parameters:
+    ///   - key: The typed key to resolve.
+    ///   - policy: The strategy used to load the backing snapshot.
+    /// - Returns: The stored value or the key's default value.
+    /// - Throws: An error when no usable snapshot can be loaded.
+    public func value(for key: RemoteConfigKey<Double>, using policy: ReadPolicy = .immediate) async throws -> Double {
+        let snapshot = try await snapshot(using: policy)
         return snapshot.value(for: key.name)?.doubleValue ?? key.defaultValue
     }
 
-    public func value(for key: RemoteConfigKey<String>, policy: ReadPolicy = .immediate) async throws -> String {
-        let snapshot = try await load(policy: policy)
+    /// Returns a string value for the supplied key.
+    ///
+    /// - Parameters:
+    ///   - key: The typed key to resolve.
+    ///   - policy: The strategy used to load the backing snapshot.
+    /// - Returns: The stored value or the key's default value.
+    /// - Throws: An error when no usable snapshot can be loaded.
+    public func value(for key: RemoteConfigKey<String>, using policy: ReadPolicy = .immediate) async throws -> String {
+        let snapshot = try await snapshot(using: policy)
         return snapshot.value(for: key.name)?.stringValue ?? key.defaultValue
     }
 
-    public func seed(snapshot: RemoteConfigSnapshot, fetchedAt: Date? = nil) async throws {
+    func seedSnapshot(_ snapshot: RemoteConfigSnapshot, fetchedAt: Date? = nil) async throws {
         let effectiveFetchedAt = fetchedAt ?? snapshot.fetchedAt
         let entry = CacheEntry(
             value: RemoteConfigSnapshot(values: snapshot.values, fetchedAt: effectiveFetchedAt),

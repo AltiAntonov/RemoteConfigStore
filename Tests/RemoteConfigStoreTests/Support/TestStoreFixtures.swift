@@ -18,7 +18,7 @@ actor TestFetcher: RemoteConfigFetcher {
         self.result = result
     }
 
-    func fetch() async throws -> RemoteConfigSnapshot {
+    func fetchSnapshot() async throws -> RemoteConfigSnapshot {
         fetchCount += 1
         return try result.get()
     }

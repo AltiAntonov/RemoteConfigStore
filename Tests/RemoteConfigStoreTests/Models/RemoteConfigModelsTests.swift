@@ -45,7 +45,7 @@ struct RemoteConfigModelsTests {
     @Test
     func readPolicyExposesThreeSupportedModes() {
         #expect(ReadPolicy.immediate == .immediate)
-        #expect(ReadPolicy.waitForRefresh == .waitForRefresh)
+        #expect(ReadPolicy.refreshBeforeReturning == .refreshBeforeReturning)
         #expect(ReadPolicy.immediateWithBackgroundRefresh == .immediateWithBackgroundRefresh)
     }
 }

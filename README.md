@@ -61,7 +61,7 @@ enum AppConfigKeys {
 }
 
 struct AppFetcher: RemoteConfigFetcher {
-    func fetch() async throws -> RemoteConfigSnapshot {
+    func fetchSnapshot() async throws -> RemoteConfigSnapshot {
         RemoteConfigSnapshot(values: [
             "new_ui": .bool(true)
         ])
@@ -76,7 +76,7 @@ let store = try RemoteConfigStore(
     maxStaleAge: 3600
 )
 
-let enabled = try await store.value(for: AppConfigKeys.newUI, policy: .immediate)
+let enabled = try await store.value(for: AppConfigKeys.newUI, using: .immediate)
 ```
 
 ## Read Policies
@@ -94,7 +94,7 @@ Return a usable cached snapshot immediately when one exists.
 
 Use this when UI responsiveness matters more than eagerly refreshing stale data.
 
-### `.waitForRefresh`
+### `.refreshBeforeReturning`
 
 Prefer a refresh before returning stale data.
 

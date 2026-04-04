@@ -18,9 +18,9 @@ struct RemoteConfigStoreBehaviorTests {
         let store = try makeStore(fetcher: fetcher)
         let cached = RemoteConfigSnapshot(values: ["new_ui": .bool(true)], fetchedAt: Date())
 
-        try await store.seed(snapshot: cached)
+        try await store.seedSnapshot(cached)
 
-        let loaded = try await store.load(policy: .immediate)
+        let loaded = try await store.snapshot(using: .immediate)
         let fetchCount = await fetcher.fetchCount
 
         #expect(loaded == cached)
@@ -33,9 +33,9 @@ struct RemoteConfigStoreBehaviorTests {
         let store = try makeStore(fetcher: fetcher, ttl: 1, maxStaleAge: 60)
         let stale = RemoteConfigSnapshot(values: ["new_ui": .bool(true)], fetchedAt: Date().addingTimeInterval(-10))
 
-        try await store.seed(snapshot: stale, fetchedAt: Date().addingTimeInterval(-10))
+        try await store.seedSnapshot(stale, fetchedAt: Date().addingTimeInterval(-10))
 
-        let loaded = try await store.load(policy: .waitForRefresh)
+        let loaded = try await store.snapshot(using: .refreshBeforeReturning)
 
         #expect(loaded.values["new_ui"] == .bool(true))
     }
@@ -46,7 +46,7 @@ struct RemoteConfigStoreBehaviorTests {
         let store = try makeStore(fetcher: fetcher)
         let key = RemoteConfigKey<Bool>("new_ui", defaultValue: false)
 
-        let value = try await store.value(for: key, policy: .waitForRefresh)
+        let value = try await store.value(for: key, using: .refreshBeforeReturning)
 
         #expect(value == false)
     }
