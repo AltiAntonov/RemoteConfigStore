@@ -2,6 +2,25 @@
 
 All notable changes to `RemoteConfigStore` will be documented in this file.
 
+## 0.1.1
+
+Repository metadata and release-follow-up update.
+
+### Added
+
+- repository code of conduct
+- social preview image assets for GitHub presentation
+
+### Changed
+
+- GitHub Actions workflow updated for the Node 24 transition
+- README now installs from the released `0.1.0` tag by default
+- README includes a live CI workflow badge
+
+### Fixed
+
+- release documentation now matches the post-`0.1.0` public package state
+
 ## 0.1.0
 
 Initial public release.

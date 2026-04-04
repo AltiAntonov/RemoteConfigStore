@@ -42,15 +42,7 @@ The public API is intentionally centered on:
 
 ## Installation
 
-Until `0.1.0` is tagged, add `RemoteConfigStore` by branch or revision:
-
-```swift
-dependencies: [
-    .package(url: "https://github.com/AltiAntonov/RemoteConfigStore.git", branch: "main")
-]
-```
-
-After the first release is tagged, switch to a semantic version requirement:
+Add `RemoteConfigStore` to your Swift Package Manager dependencies:
 
 ```swift
 dependencies: [
@@ -68,6 +60,8 @@ Then add the product to your target:
     ]
 )
 ```
+
+If you need to try unreleased changes, pin to a branch or revision explicitly.
 
 ## Quick Start
 
