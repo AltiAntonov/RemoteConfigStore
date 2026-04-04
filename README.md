@@ -5,6 +5,7 @@
     <img src="https://img.shields.io/badge/Swift-6.0%2B-F05138" alt="Swift 6.0+">
     <img src="https://img.shields.io/badge/Platforms-iOS%2017%2B%20%7C%20macOS%2014%2B-0A84FF" alt="Platforms">
     <img src="https://img.shields.io/badge/License-MIT-34C759" alt="MIT License">
+    <a href="https://github.com/AltiAntonov/RemoteConfigStore/actions/workflows/swift.yml"><img src="https://github.com/AltiAntonov/RemoteConfigStore/actions/workflows/swift.yml/badge.svg" alt="Swift workflow"></a>
   </p>
   <p>
     <a href="#features">Features</a> ·
