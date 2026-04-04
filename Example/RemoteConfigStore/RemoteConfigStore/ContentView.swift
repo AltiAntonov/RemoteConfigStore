@@ -19,6 +19,7 @@ struct ContentView: View {
                 header
                 controlPanel
                 statePanel
+                typedAccessorsPanel
                 snapshotPanel
             }
             .padding(20)
@@ -118,11 +119,48 @@ struct ContentView: View {
     private var snapshotPanel: some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Cached Snapshot")
+                Text("Raw Cached Snapshot")
                     .font(.headline)
 
-                if model.displayedRows.isEmpty {
+                Text("This panel shows the underlying cached payload so you can compare it with the consumer-facing typed accessors above.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                if model.snapshotRows.isEmpty {
                     Text("No snapshot loaded yet.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(model.snapshotRows) { row in
+                            snapshotRow(row)
+
+                            if row.id != model.snapshotRows.last?.id {
+                                Divider()
+                            }
+                        }
+                    }
+                }
+
+                Text(model.remoteRevision > model.currentRevision ? "The backend has moved ahead of the shown cache. Use a policy load or refresh to catch up." : "The cache matches the latest backend revision.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+            }
+        }
+    }
+
+    private var typedAccessorsPanel: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Typed Accessors")
+                    .font(.headline)
+
+                Text("These values are resolved through `RemoteConfigKey` definitions and the store convenience APIs such as `bool(for:)` and `string(for:)`.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                if model.displayedRows.isEmpty {
+                    Text("Load a policy to resolve typed values.")
                         .foregroundStyle(.secondary)
                 } else {
                     VStack(spacing: 0) {
@@ -135,11 +173,6 @@ struct ContentView: View {
                         }
                     }
                 }
-
-                Text(model.remoteRevision > model.currentRevision ? "The backend has moved ahead of the shown cache. Use a policy load or refresh to catch up." : "The cache matches the latest backend revision.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 4)
             }
         }
     }
