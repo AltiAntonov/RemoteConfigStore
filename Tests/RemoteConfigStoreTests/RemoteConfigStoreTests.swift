@@ -86,4 +86,72 @@ final class RemoteConfigStoreTests: XCTestCase {
         XCTAssertEqual(ReadPolicy.waitForRefresh, .waitForRefresh)
         XCTAssertEqual(ReadPolicy.immediateWithBackgroundRefresh, .immediateWithBackgroundRefresh)
     }
+
+    func testLoadReturnsFreshMemorySnapshotBeforeHittingNetwork() async throws {
+        let fetcher = TestFetcher(result: .success(RemoteConfigSnapshot(values: ["new_ui": .bool(false)])))
+        let store = try makeStore(fetcher: fetcher)
+        let cached = RemoteConfigSnapshot(values: ["new_ui": .bool(true)], fetchedAt: Date())
+
+        try await store.seed(snapshot: cached)
+
+        let loaded = try await store.load(policy: ReadPolicy.immediate)
+        let fetchCount = await fetcher.fetchCount
+
+        XCTAssertEqual(loaded, cached)
+        XCTAssertEqual(fetchCount, 0)
+    }
+
+    func testLoadReturnsStaleSnapshotWhenWithinMaxStaleAndRefreshFails() async throws {
+        let fetcher = TestFetcher(result: .failure(TestError.fetchFailed))
+        let store = try makeStore(fetcher: fetcher, ttl: 1, maxStaleAge: 60)
+        let stale = RemoteConfigSnapshot(values: ["new_ui": .bool(true)], fetchedAt: Date().addingTimeInterval(-10))
+
+        try await store.seed(snapshot: stale, fetchedAt: Date().addingTimeInterval(-10))
+
+        let loaded = try await store.load(policy: ReadPolicy.waitForRefresh)
+
+        XCTAssertEqual(loaded.values["new_ui"], RemoteConfigValue.bool(true))
+    }
+
+    func testValueReturnsTypedDefaultWhenKeyMissing() async throws {
+        let fetcher = TestFetcher(result: .success(RemoteConfigSnapshot(values: [:])))
+        let store = try makeStore(fetcher: fetcher)
+        let key = RemoteConfigKey<Bool>("new_ui", defaultValue: false)
+
+        let value = try await store.value(for: key, policy: ReadPolicy.waitForRefresh)
+
+        XCTAssertEqual(value, false)
+    }
+}
+
+actor TestFetcher: RemoteConfigFetcher {
+    private(set) var fetchCount = 0
+    private let result: Result<RemoteConfigSnapshot, Error>
+
+    init(result: Result<RemoteConfigSnapshot, Error>) {
+        self.result = result
+    }
+
+    func fetch() async throws -> RemoteConfigSnapshot {
+        fetchCount += 1
+        return try result.get()
+    }
+}
+
+enum TestError: Error {
+    case fetchFailed
+}
+
+func makeStore(
+    fetcher: some RemoteConfigFetcher,
+    ttl: TimeInterval = 60,
+    maxStaleAge: TimeInterval? = nil
+) throws -> RemoteConfigStore {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    return try RemoteConfigStore(
+        fetcher: fetcher,
+        cacheDirectory: directory,
+        ttl: ttl,
+        maxStaleAge: maxStaleAge
+    )
 }
