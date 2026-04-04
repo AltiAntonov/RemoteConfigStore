@@ -453,13 +453,6 @@
 		};
 /* End XCBuildConfiguration section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		AA1000000000000000000002 /* XCLocalSwiftPackageReference "../../" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../;
-		};
-/* End XCLocalSwiftPackageReference section */
-
 /* Begin XCConfigurationList section */
 		6C9B7A722F81560F008D7128 /* Build configuration list for PBXProject "RemoteConfigStore" */ = {
 			isa = XCConfigurationList;
@@ -489,6 +482,13 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		AA1000000000000000000002 /* XCLocalSwiftPackageReference "../../" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../;
+		};
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		AA1000000000000000000003 /* RemoteConfigStore */ = {
