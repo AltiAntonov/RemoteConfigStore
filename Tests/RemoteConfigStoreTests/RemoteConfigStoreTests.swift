@@ -80,4 +80,10 @@ final class RemoteConfigStoreTests: XCTestCase {
 
         XCTAssertEqual(loaded, entry)
     }
+
+    func testReadPolicyExposesThreeSupportedModes() {
+        XCTAssertEqual(ReadPolicy.immediate, .immediate)
+        XCTAssertEqual(ReadPolicy.waitForRefresh, .waitForRefresh)
+        XCTAssertEqual(ReadPolicy.immediateWithBackgroundRefresh, .immediateWithBackgroundRefresh)
+    }
 }
