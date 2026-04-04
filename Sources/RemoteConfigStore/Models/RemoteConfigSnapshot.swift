@@ -33,4 +33,43 @@ public struct RemoteConfigSnapshot: Codable, Sendable, Equatable {
     public func value(for key: String) -> RemoteConfigValue? {
         values[key]
     }
+
+    /// Returns a Boolean value for the supplied typed key.
+    ///
+    /// - Parameter key: The typed key to resolve.
+    /// - Returns: The stored value or the key's default value.
+    public func bool(for key: RemoteConfigKey<Bool>) -> Bool {
+        value(for: key, defaultingTo: \.boolValue)
+    }
+
+    /// Returns an integer value for the supplied typed key.
+    ///
+    /// - Parameter key: The typed key to resolve.
+    /// - Returns: The stored value or the key's default value.
+    public func int(for key: RemoteConfigKey<Int>) -> Int {
+        value(for: key, defaultingTo: \.intValue)
+    }
+
+    /// Returns a floating-point value for the supplied typed key.
+    ///
+    /// - Parameter key: The typed key to resolve.
+    /// - Returns: The stored value or the key's default value.
+    public func double(for key: RemoteConfigKey<Double>) -> Double {
+        value(for: key, defaultingTo: \.doubleValue)
+    }
+
+    /// Returns a string value for the supplied typed key.
+    ///
+    /// - Parameter key: The typed key to resolve.
+    /// - Returns: The stored value or the key's default value.
+    public func string(for key: RemoteConfigKey<String>) -> String {
+        value(for: key, defaultingTo: \.stringValue)
+    }
+
+    private func value<Value>(
+        for key: RemoteConfigKey<Value>,
+        defaultingTo projection: KeyPath<RemoteConfigValue, Value?>
+    ) -> Value {
+        values[key.name]?[keyPath: projection] ?? key.defaultValue
+    }
 }
