@@ -2,8 +2,12 @@
   <h1>RemoteConfigStore</h1>
   <p><strong>Offline-first remote config caching with TTL, stale fallback, and typed keys.</strong></p>
   <p>
-    <img src="https://img.shields.io/badge/Swift-6.0%2B-F05138" alt="Swift 6.0+">
-    <img src="https://img.shields.io/badge/Platforms-iOS%2017%2B%20%7C%20macOS%2014%2B-0A84FF" alt="Platforms">
+    <a href="https://swiftpackageindex.com/AltiAntonov/RemoteConfigStore">
+      <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FAltiAntonov%2FRemoteConfigStore%2Fbadge%3Ftype%3Dswift-versions" alt="Swift version compatibility">
+    </a>
+    <a href="https://swiftpackageindex.com/AltiAntonov/RemoteConfigStore">
+      <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FAltiAntonov%2FRemoteConfigStore%2Fbadge%3Ftype%3Dplatforms" alt="Platform compatibility">
+    </a>
     <img src="https://img.shields.io/badge/License-MIT-34C759" alt="MIT License">
     <a href="https://github.com/AltiAntonov/RemoteConfigStore/actions/workflows/swift.yml"><img src="https://github.com/AltiAntonov/RemoteConfigStore/actions/workflows/swift.yml/badge.svg" alt="Swift workflow"></a>
   </p>
@@ -49,7 +53,7 @@ Add `RemoteConfigStore` to your Swift Package Manager dependencies:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AltiAntonov/RemoteConfigStore.git", from: "0.1.0")
+    .package(url: "https://github.com/AltiAntonov/RemoteConfigStore.git", from: "0.1.1")
 ]
 ```
 
@@ -214,6 +218,12 @@ Planned scenarios:
 - `HTTP Fetcher` - Example soon
 - `ETag Validation` - Example soon
 - `Observers And Metrics` - Example soon
+
+## Documentation
+
+The package now includes a DocC catalog in `Sources/RemoteConfigStore/RemoteConfigStore.docc`.
+
+Once Swift Package Index processes the `.spi.yml` manifest and the DocC catalog, hosted documentation should appear on the package page automatically.
 
 ## Example Scenarios
 
