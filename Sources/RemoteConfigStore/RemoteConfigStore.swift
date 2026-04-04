@@ -144,6 +144,19 @@ public actor RemoteConfigStore {
 
     /// Returns a Boolean value for the supplied key.
     ///
+    /// This convenience overload keeps call sites explicit about the requested primitive type.
+    ///
+    /// - Parameters:
+    ///   - key: The typed key to resolve.
+    ///   - policy: The strategy used to load the backing snapshot.
+    /// - Returns: The stored value or the key's default value.
+    /// - Throws: An error when no usable snapshot can be loaded.
+    public func bool(for key: RemoteConfigKey<Bool>, using policy: ReadPolicy = .immediate) async throws -> Bool {
+        try await value(for: key, using: policy)
+    }
+
+    /// Returns a Boolean value for the supplied key.
+    ///
     /// - Parameters:
     ///   - key: The typed key to resolve.
     ///   - policy: The strategy used to load the backing snapshot.
@@ -152,6 +165,19 @@ public actor RemoteConfigStore {
     public func value(for key: RemoteConfigKey<Bool>, using policy: ReadPolicy = .immediate) async throws -> Bool {
         let snapshot = try await snapshot(using: policy)
         return snapshot.value(for: key.name)?.boolValue ?? key.defaultValue
+    }
+
+    /// Returns an integer value for the supplied key.
+    ///
+    /// This convenience overload keeps call sites explicit about the requested primitive type.
+    ///
+    /// - Parameters:
+    ///   - key: The typed key to resolve.
+    ///   - policy: The strategy used to load the backing snapshot.
+    /// - Returns: The stored value or the key's default value.
+    /// - Throws: An error when no usable snapshot can be loaded.
+    public func int(for key: RemoteConfigKey<Int>, using policy: ReadPolicy = .immediate) async throws -> Int {
+        try await value(for: key, using: policy)
     }
 
     /// Returns an integer value for the supplied key.
@@ -168,6 +194,19 @@ public actor RemoteConfigStore {
 
     /// Returns a floating-point value for the supplied key.
     ///
+    /// This convenience overload keeps call sites explicit about the requested primitive type.
+    ///
+    /// - Parameters:
+    ///   - key: The typed key to resolve.
+    ///   - policy: The strategy used to load the backing snapshot.
+    /// - Returns: The stored value or the key's default value.
+    /// - Throws: An error when no usable snapshot can be loaded.
+    public func double(for key: RemoteConfigKey<Double>, using policy: ReadPolicy = .immediate) async throws -> Double {
+        try await value(for: key, using: policy)
+    }
+
+    /// Returns a floating-point value for the supplied key.
+    ///
     /// - Parameters:
     ///   - key: The typed key to resolve.
     ///   - policy: The strategy used to load the backing snapshot.
@@ -176,6 +215,19 @@ public actor RemoteConfigStore {
     public func value(for key: RemoteConfigKey<Double>, using policy: ReadPolicy = .immediate) async throws -> Double {
         let snapshot = try await snapshot(using: policy)
         return snapshot.value(for: key.name)?.doubleValue ?? key.defaultValue
+    }
+
+    /// Returns a string value for the supplied key.
+    ///
+    /// This convenience overload keeps call sites explicit about the requested primitive type.
+    ///
+    /// - Parameters:
+    ///   - key: The typed key to resolve.
+    ///   - policy: The strategy used to load the backing snapshot.
+    /// - Returns: The stored value or the key's default value.
+    /// - Throws: An error when no usable snapshot can be loaded.
+    public func string(for key: RemoteConfigKey<String>, using policy: ReadPolicy = .immediate) async throws -> String {
+        try await value(for: key, using: policy)
     }
 
     /// Returns a string value for the supplied key.
