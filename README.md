@@ -28,6 +28,17 @@
 - typed key access for primitive values
 - actor-backed store implementation for serialized state access
 
+The public API is intentionally centered on:
+
+- `RemoteConfigStore`
+- `RemoteConfigFetcher`
+- `RemoteConfigSnapshot`
+- `RemoteConfigKey`
+- `RemoteConfigValue`
+- `ReadPolicy`
+- `RemoteConfigStoreError`
+- `Logger`
+
 ## Installation
 
 Add `RemoteConfigStore` to your Swift Package Manager dependencies:

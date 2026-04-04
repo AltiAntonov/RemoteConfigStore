@@ -10,18 +10,18 @@
 import Foundation
 
 /// Stores a cached value together with its expiration timestamp.
-public struct CacheEntry<Value: Codable & Sendable & Equatable>: Codable, Sendable, Equatable {
+struct CacheEntry<Value: Codable & Sendable & Equatable>: Codable, Sendable, Equatable {
     /// The cached value.
-    public let value: Value
+    let value: Value
     /// The time when the cached value should stop being considered fresh.
-    public let expirationDate: Date
+    let expirationDate: Date
 
     /// Creates a cache entry for a value and its expiration timestamp.
     ///
     /// - Parameters:
     ///   - value: The cached value.
     ///   - expirationDate: The freshness cutoff for the value.
-    public init(value: Value, expirationDate: Date) {
+    init(value: Value, expirationDate: Date) {
         self.value = value
         self.expirationDate = expirationDate
     }
