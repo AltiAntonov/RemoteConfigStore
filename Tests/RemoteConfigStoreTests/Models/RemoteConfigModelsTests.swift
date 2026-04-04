@@ -65,6 +65,20 @@ struct RemoteConfigModelsTests {
     }
 
     @Test
+    func snapshotReportsAgeAndFreshness() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let snapshot = RemoteConfigSnapshot(
+            values: [:],
+            fetchedAt: Date(timeIntervalSince1970: 900)
+        )
+
+        #expect(snapshot.age(relativeTo: now) == 100)
+        #expect(snapshot.freshness(ttl: 120, relativeTo: now) == .fresh)
+        #expect(snapshot.freshness(ttl: 60, maxStaleAge: 60, relativeTo: now) == .stale)
+        #expect(snapshot.freshness(ttl: 30, maxStaleAge: 30, relativeTo: now) == .expired)
+    }
+
+    @Test
     func readPolicyExposesThreeSupportedModes() {
         #expect(ReadPolicy.immediate == .immediate)
         #expect(ReadPolicy.refreshBeforeReturning == .refreshBeforeReturning)

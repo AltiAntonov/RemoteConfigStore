@@ -66,6 +66,38 @@ public struct RemoteConfigSnapshot: Codable, Sendable, Equatable {
         value(for: key, defaultingTo: \.stringValue)
     }
 
+    /// Returns the snapshot age in seconds relative to the supplied reference date.
+    ///
+    /// - Parameter now: The date used as the comparison point.
+    /// - Returns: The number of seconds since the snapshot was fetched.
+    public func age(relativeTo now: Date = Date()) -> TimeInterval {
+        max(0, now.timeIntervalSince(fetchedAt))
+    }
+
+    /// Returns the freshness state for the supplied cache policy windows.
+    ///
+    /// - Parameters:
+    ///   - ttl: The duration for which the snapshot is considered fresh.
+    ///   - maxStaleAge: The optional additional duration in which stale data remains usable.
+    ///   - now: The date used as the comparison point.
+    /// - Returns: The snapshot freshness state at the supplied point in time.
+    public func freshness(
+        ttl: TimeInterval,
+        maxStaleAge: TimeInterval? = nil,
+        relativeTo now: Date = Date()
+    ) -> SnapshotFreshness {
+        let snapshotAge = age(relativeTo: now)
+        if snapshotAge <= ttl {
+            return .fresh
+        }
+
+        if let maxStaleAge, snapshotAge <= ttl + maxStaleAge {
+            return .stale
+        }
+
+        return .expired
+    }
+
     private func value<Value>(
         for key: RemoteConfigKey<Value>,
         defaultingTo projection: KeyPath<RemoteConfigValue, Value?>
