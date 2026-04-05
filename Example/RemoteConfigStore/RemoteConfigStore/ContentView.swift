@@ -15,6 +15,11 @@ struct ContentView: View {
             title: "Feature Flags",
             summary: "See typed keys, cache-first reads, and policy-driven refresh behavior with a flag-style config payload.",
             destination: AnyView(FeatureFlagsDemoView())
+        ),
+        .init(
+            title: "HTTP Fetcher",
+            summary: "Use the built-in URLSession fetcher and URL-based store initializer with a mocked HTTP endpoint.",
+            destination: AnyView(HTTPFetcherDemoView())
         )
     ]
 

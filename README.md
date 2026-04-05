@@ -22,8 +22,9 @@
     <a href="#freshness-model">Freshness Model</a> ·
     <a href="#errors">Errors</a> ·
     <a href="#example-app">Example App</a> ·
+    <a href="#documentation">Documentation</a> ·
     <a href="#testing">Testing</a> ·
-    <a href="#roadmap">Roadmap</a>
+    <a href="#example-scenarios">Example Scenarios</a>
   </p>
 </div>
 
@@ -97,6 +98,20 @@ let store = try RemoteConfigStore(
 )
 
 let enabled = try await store.value(for: AppConfigKeys.newUI, using: .immediate)
+```
+
+You can also use the built-in HTTP path when your config comes from a JSON endpoint:
+
+```swift
+let store = try RemoteConfigStore(
+    request: HTTPRemoteConfigRequest(
+        url: URL(string: "https://example.com/remote-config.json")!,
+        headers: ["Authorization": "Bearer token"],
+        timeoutInterval: 8
+    ),
+    cacheDirectory: directory.appendingPathComponent("RemoteConfigStore"),
+    ttl: 300
+)
 ```
 
 ## When To Use RemoteConfigStore
@@ -215,7 +230,8 @@ Current scenarios:
 Planned scenarios:
 
 - `Offline Fallback` - Example soon
-- `HTTP Fetcher` - Example soon
+- `HTTP Fetcher`
+  Code: [HTTPFetcherDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/HTTPFetcher/HTTPFetcherDemoView.swift)
 - `ETag Validation` - Example soon
 - `Observers And Metrics` - Example soon
 
@@ -237,7 +253,6 @@ Implemented:
 Coming later:
 
 - `Offline Fallback` - Example soon
-- `HTTP Fetcher` - Example soon
 - `ETag Validation` - Example soon
 - `Structured Payloads` - Example soon
 
