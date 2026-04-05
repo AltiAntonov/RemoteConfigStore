@@ -41,6 +41,33 @@ public actor RemoteConfigStore {
         self.logger = logger
     }
 
+    /// Creates a remote configuration store backed by the built-in HTTP fetcher.
+    ///
+    /// - Parameters:
+    ///   - request: The HTTP request configuration for the remote config endpoint.
+    ///   - cacheDirectory: The directory used to persist cached snapshots.
+    ///   - ttl: The duration a fetched snapshot remains fresh.
+    ///   - maxStaleAge: The optional extra window in which stale data remains usable.
+    ///   - session: The session used to perform HTTP requests.
+    ///   - logger: The logger used for cache and refresh events.
+    /// - Throws: An error if the cache directory cannot be prepared.
+    public init(
+        request: HTTPRemoteConfigRequest,
+        cacheDirectory: URL,
+        ttl: TimeInterval,
+        maxStaleAge: TimeInterval? = nil,
+        session: URLSession = .shared,
+        logger: any Logger = NoopLogger()
+    ) throws {
+        try self.init(
+            fetcher: HTTPRemoteConfigFetcher(request: request, session: session),
+            cacheDirectory: cacheDirectory,
+            ttl: ttl,
+            maxStaleAge: maxStaleAge,
+            logger: logger
+        )
+    }
+
     /// Returns the currently cached snapshot.
     ///
     /// - Returns: The cached snapshot loaded from memory or disk.

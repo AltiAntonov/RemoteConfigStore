@@ -144,4 +144,25 @@ struct RemoteConfigStoreBehaviorTests {
         #expect(intValue == 5000)
         #expect(doubleValue == 0.25)
     }
+
+    @Test
+    func convenienceInitializerBuildsStoreFromHTTPRequest() async throws {
+        let cacheDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let url = try #require(URL(string: "https://example.com/config"))
+
+        let store = try RemoteConfigStore(
+            request: HTTPRemoteConfigRequest(
+                url: url,
+                headers: ["Authorization": "Bearer token"],
+                timeoutInterval: 12
+            ),
+            cacheDirectory: cacheDirectory,
+            ttl: 60
+        )
+
+        let cachedSnapshot = await #expect(throws: RemoteConfigStoreError.noCachedSnapshot) {
+            try await store.cachedSnapshot()
+        }
+        _ = cachedSnapshot
+    }
 }
