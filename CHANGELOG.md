@@ -2,6 +2,23 @@
 
 All notable changes to `RemoteConfigStore` will be documented in this file.
 
+## 0.3.0
+
+Built-in HTTP fetching release.
+
+### Added
+
+- `HTTPRemoteConfigRequest` for endpoint URL, headers, timeout, and request building
+- `HTTPRemoteConfigFetcher` backed by `URLSession`
+- `HTTPRemoteConfigFetcherError` for invalid HTTP response and payload failures
+- convenience `RemoteConfigStore` initializer for URL-based HTTP configuration
+- dedicated `HTTP Fetcher` example scenario in the showcase app
+
+### Changed
+
+- README quick start now includes the built-in HTTP path
+- example app now covers both typed feature flags and HTTP-backed config loading
+
 ## 0.2.0
 
 Developer ergonomics and documentation update.
