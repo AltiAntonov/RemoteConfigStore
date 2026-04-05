@@ -2,6 +2,21 @@
 
 All notable changes to `RemoteConfigStore` will be documented in this file.
 
+## 0.3.1
+
+Refresh-result and unchanged-payload update.
+
+### Added
+
+- `RemoteConfigRefreshResult` to distinguish unchanged refreshes from updated payloads
+- `refreshResult()` on `RemoteConfigStore`
+- `hasSamePayload(as:)` on `RemoteConfigSnapshot`
+
+### Changed
+
+- refresh work now recognizes when a fetched snapshot has the same payload as the cached snapshot
+- README now installs from `0.3.0` by default and shows the `refreshResult()` API
+
 ## 0.3.0
 
 Built-in HTTP fetching release.
