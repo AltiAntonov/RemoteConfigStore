@@ -42,6 +42,7 @@ The public API is intentionally centered on:
 - `RemoteConfigStore`
 - `RemoteConfigFetcher`
 - `RemoteConfigSnapshot`
+- `RemoteConfigRefreshResult`
 - `RemoteConfigKey`
 - `RemoteConfigValue`
 - `ReadPolicy`
@@ -54,7 +55,7 @@ Add `RemoteConfigStore` to your Swift Package Manager dependencies:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AltiAntonov/RemoteConfigStore.git", from: "0.1.1")
+    .package(url: "https://github.com/AltiAntonov/RemoteConfigStore.git", from: "0.3.0")
 ]
 ```
 
@@ -98,6 +99,17 @@ let store = try RemoteConfigStore(
 )
 
 let enabled = try await store.value(for: AppConfigKeys.newUI, using: .immediate)
+```
+
+If you need to know whether a refresh actually changed the payload, use `refreshResult()`:
+
+```swift
+switch try await store.refreshResult() {
+case .updated(let snapshot):
+    print("Config changed:", snapshot.values)
+case .unchanged:
+    print("Config payload is unchanged.")
+}
 ```
 
 You can also use the built-in HTTP path when your config comes from a JSON endpoint:
