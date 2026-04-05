@@ -98,6 +98,17 @@ public struct RemoteConfigSnapshot: Codable, Sendable, Equatable {
         return .expired
     }
 
+    /// Returns whether this snapshot has the same configuration payload as another snapshot.
+    ///
+    /// `fetchedAt` is intentionally ignored so refresh work can distinguish payload changes
+    /// from freshness renewal.
+    ///
+    /// - Parameter other: The snapshot to compare against.
+    /// - Returns: `true` when both snapshots contain the same keyed values.
+    public func hasSamePayload(as other: RemoteConfigSnapshot) -> Bool {
+        values == other.values
+    }
+
     private func value<Value>(
         for key: RemoteConfigKey<Value>,
         defaultingTo projection: KeyPath<RemoteConfigValue, Value?>

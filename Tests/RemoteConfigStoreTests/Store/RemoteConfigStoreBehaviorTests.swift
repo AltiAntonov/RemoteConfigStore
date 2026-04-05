@@ -165,4 +165,72 @@ struct RemoteConfigStoreBehaviorTests {
         }
         _ = cachedSnapshot
     }
+
+    @Test
+    func refreshResultReportsUpdatedWhenNoCachedSnapshotExists() async throws {
+        let fresh = RemoteConfigSnapshot(values: ["new_ui": .bool(true)])
+        let fetcher = TestFetcher(result: .success(fresh))
+        let store = try makeStore(fetcher: fetcher)
+
+        let result = try await store.refreshResult()
+
+        switch result {
+        case .updated(let snapshot):
+            #expect(snapshot == fresh)
+        case .unchanged:
+            Issue.record("Expected an updated refresh result when no cached snapshot exists.")
+        }
+    }
+
+    @Test
+    func refreshResultReportsUnchangedWhenFetchedPayloadMatchesCachedSnapshot() async throws {
+        let cached = RemoteConfigSnapshot(
+            values: ["new_ui": .bool(true), "config_revision": .int(1)],
+            fetchedAt: Date().addingTimeInterval(-120)
+        )
+        let fetched = RemoteConfigSnapshot(
+            values: ["new_ui": .bool(true), "config_revision": .int(1)],
+            fetchedAt: Date()
+        )
+        let fetcher = TestFetcher(result: .success(fetched))
+        let store = try makeStore(fetcher: fetcher)
+
+        try await store.seedSnapshot(cached, fetchedAt: cached.fetchedAt)
+
+        let result = try await store.refreshResult()
+        let cachedAfterRefresh = try await store.cachedSnapshot()
+
+        switch result {
+        case .unchanged(let snapshot):
+            #expect(snapshot == fetched)
+            #expect(cachedAfterRefresh == fetched)
+        case .updated:
+            Issue.record("Expected an unchanged refresh result when payload values match.")
+        }
+    }
+
+    @Test
+    func refreshResultReportsUpdatedWhenFetchedPayloadChanges() async throws {
+        let cached = RemoteConfigSnapshot(
+            values: ["new_ui": .bool(false), "config_revision": .int(1)],
+            fetchedAt: Date().addingTimeInterval(-120)
+        )
+        let fetched = RemoteConfigSnapshot(
+            values: ["new_ui": .bool(true), "config_revision": .int(2)],
+            fetchedAt: Date()
+        )
+        let fetcher = TestFetcher(result: .success(fetched))
+        let store = try makeStore(fetcher: fetcher)
+
+        try await store.seedSnapshot(cached, fetchedAt: cached.fetchedAt)
+
+        let result = try await store.refreshResult()
+
+        switch result {
+        case .updated(let snapshot):
+            #expect(snapshot == fetched)
+        case .unchanged:
+            Issue.record("Expected an updated refresh result when payload values change.")
+        }
+    }
 }
