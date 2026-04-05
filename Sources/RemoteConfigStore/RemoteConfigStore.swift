@@ -92,11 +92,25 @@ public actor RemoteConfigStore {
     /// - Returns: The freshly fetched snapshot.
     /// - Throws: An error describing why the refresh failed.
     public func refresh() async throws -> RemoteConfigSnapshot {
+        return try await refreshResult().snapshot
+    }
+
+    /// Forces a refresh and reports whether the fetched payload changed.
+    ///
+    /// Concurrent callers share a single in-flight refresh task.
+    ///
+    /// - Returns: A result describing whether the payload changed and the refreshed snapshot.
+    /// - Throws: An error describing why the refresh failed.
+    public func refreshResult() async throws -> RemoteConfigRefreshResult {
         if let refreshTask {
-            return try await refreshTask.value
+            let snapshot = try await refreshTask.value
+            return .updated(snapshot)
         }
 
         logger.log("Fetching remote config")
+        let memoryEntry = await memoryCache.entry(for: cacheKey)
+        let diskEntry = try diskCache.load(for: cacheKey)
+        let cachedEntry = memoryEntry ?? diskEntry
         let task = Task {
             try await fetcher.fetchSnapshot()
         }
@@ -104,15 +118,22 @@ public actor RemoteConfigStore {
 
         do {
             let snapshot = try await task.value
+            let result: RemoteConfigRefreshResult
+            if let cachedEntry, cachedEntry.value.hasSamePayload(as: snapshot) {
+                logger.log("Remote config unchanged")
+                result = .unchanged(snapshot)
+            } else {
+                result = .updated(snapshot)
+            }
             let entry = CacheEntry(
-                value: snapshot,
+                value: result.snapshot,
                 expirationDate: ttlPolicy.expirationDate(from: snapshot.fetchedAt)
             )
 
             await memoryCache.set(entry, for: cacheKey)
             try diskCache.save(entry, for: cacheKey)
             refreshTask = nil
-            return snapshot
+            return result
         } catch {
             refreshTask = nil
             throw error
