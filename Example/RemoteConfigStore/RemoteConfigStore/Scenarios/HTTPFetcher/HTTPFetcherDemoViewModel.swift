@@ -37,6 +37,7 @@ final class HTTPFetcherDemoViewModel {
     var fetchCount = 0
     var serverRevision = 1
     var lastLoadedAt: Date?
+    var lastRefreshResult = "No refresh yet"
     var rows: [Row] = []
 
     var endpoint: String {
@@ -76,10 +77,17 @@ final class HTTPFetcherDemoViewModel {
             isLoading = true
             errorMessage = nil
 
-            let snapshot = try await store.refresh()
+            let result = try await store.refreshResult()
+            let snapshot = result.snapshot
             lastLoadedAt = Date()
             fetchCount = protocolHandler.fetchCount
             serverRevision = protocolHandler.currentRevision
+            lastRefreshResult = switch result {
+            case .updated:
+                "Updated"
+            case .unchanged:
+                "Unchanged"
+            }
             rows = [
                 Row(id: "config_revision", title: "config_revision", value: "\(snapshot.int(for: DemoKeys.revision))"),
                 Row(id: "feature.http_config", title: "feature.http_config", value: snapshot.bool(for: DemoKeys.enableHTTPConfig) ? "true" : "false"),

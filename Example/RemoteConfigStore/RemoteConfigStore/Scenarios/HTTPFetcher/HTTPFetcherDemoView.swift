@@ -92,6 +92,7 @@ struct HTTPFetcherDemoView: View {
                 }
 
                 infoRow(title: "Status", value: model.statusMessage)
+                infoRow(title: "Last refresh result", value: model.lastRefreshResult)
                 infoRow(title: "Server revision", value: "\(model.serverRevision)")
                 infoRow(title: "Fetch count", value: "\(model.fetchCount)")
                 infoRow(title: "Last loaded", value: model.lastLoadedAt.map { Self.dateFormatter.string(from: $0) } ?? "Not loaded yet")
