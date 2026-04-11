@@ -11,6 +11,8 @@ import Foundation
 
 /// Describes failures thrown by the built-in HTTP remote config fetcher.
 public enum HTTPRemoteConfigFetcherError: Error, Sendable, Equatable {
+    /// The server reported that the cached response is still valid.
+    case notModified(HTTPRemoteConfigValidationMetadata?)
     /// The server returned an unexpected HTTP status code.
     case invalidResponseStatusCode(Int)
     /// The transport response was not an `HTTPURLResponse`.
