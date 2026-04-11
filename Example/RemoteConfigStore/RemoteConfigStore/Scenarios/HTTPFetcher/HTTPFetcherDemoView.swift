@@ -11,7 +11,17 @@ import SwiftUI
 import RemoteConfigStore
 
 struct HTTPFetcherDemoView: View {
+    enum Mode {
+        case standard
+        case cacheValidation
+    }
+
     @State private var model = HTTPFetcherDemoViewModel()
+    let mode: Mode
+
+    init(mode: Mode = .standard) {
+        self.mode = mode
+    }
 
     var body: some View {
         ScrollView {
@@ -37,7 +47,7 @@ struct HTTPFetcherDemoView: View {
         .navigationTitle("HTTP Fetcher")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            model.bootstrap()
+            model.bootstrap(mode: mode)
         }
     }
 
@@ -46,7 +56,9 @@ struct HTTPFetcherDemoView: View {
             Text("HTTP Fetcher")
                 .font(.system(size: 30, weight: .bold, design: .rounded))
 
-            Text("This scenario uses the built-in `HTTPRemoteConfigFetcher` and the URL-based store initializer against a mocked `URLSession` endpoint.")
+            Text(mode == .standard
+                 ? "This scenario uses the built-in `HTTPRemoteConfigFetcher` and the URL-based store initializer against a mocked `URLSession` endpoint."
+                 : "This scenario shows conditional HTTP revalidation with ETag metadata, `304 Not Modified`, and renewed cache freshness.")
                 .font(.headline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -63,6 +75,9 @@ struct HTTPFetcherDemoView: View {
                 infoRow(title: "URL", value: model.endpoint)
                 infoRow(title: "Header", value: "Authorization: Bearer demo-token")
                 infoRow(title: "Timeout", value: "8 seconds")
+                if mode == .cacheValidation {
+                    infoRow(title: "Revalidation", value: "If-None-Match / 304 Not Modified")
+                }
 
                 HStack(spacing: 12) {
                     Button("Load From HTTP") {
@@ -95,6 +110,11 @@ struct HTTPFetcherDemoView: View {
                 infoRow(title: "Last refresh result", value: model.lastRefreshResult)
                 infoRow(title: "Server revision", value: "\(model.serverRevision)")
                 infoRow(title: "Fetch count", value: "\(model.fetchCount)")
+                if mode == .cacheValidation {
+                    infoRow(title: "Server ETag", value: model.serverEntityTag)
+                    infoRow(title: "Cached ETag", value: model.cachedEntityTag)
+                    infoRow(title: "Response type", value: model.lastResponseType)
+                }
                 infoRow(title: "Last loaded", value: model.lastLoadedAt.map { Self.dateFormatter.string(from: $0) } ?? "Not loaded yet")
 
                 if let errorMessage = model.errorMessage {
@@ -112,7 +132,9 @@ struct HTTPFetcherDemoView: View {
                 Text("Decoded Values")
                     .font(.headline)
 
-                Text("These values come through the built-in HTTP fetcher, then read from the store with typed keys.")
+                Text(mode == .standard
+                     ? "These values come through the built-in HTTP fetcher, then read from the store with typed keys."
+                     : "Load once to cache the payload, then load again without advancing the revision to see a `304` renew the cache without changing the payload.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
