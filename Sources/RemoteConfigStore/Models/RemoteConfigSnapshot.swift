@@ -15,15 +15,23 @@ public struct RemoteConfigSnapshot: Codable, Sendable, Equatable {
     public let values: [String: RemoteConfigValue]
     /// The time when the snapshot was fetched from its remote source.
     public let fetchedAt: Date
+    /// HTTP response metadata that can be reused for conditional fetch validation.
+    public let httpValidationMetadata: HTTPRemoteConfigValidationMetadata?
 
     /// Creates a snapshot from raw values and their fetch time.
     ///
     /// - Parameters:
     ///   - values: The remote configuration values keyed by name.
     ///   - fetchedAt: The time when the snapshot was fetched.
-    public init(values: [String: RemoteConfigValue], fetchedAt: Date = Date()) {
+    ///   - httpValidationMetadata: Persisted HTTP validation metadata for conditional requests.
+    public init(
+        values: [String: RemoteConfigValue],
+        fetchedAt: Date = Date(),
+        httpValidationMetadata: HTTPRemoteConfigValidationMetadata? = nil
+    ) {
         self.values = values
         self.fetchedAt = fetchedAt
+        self.httpValidationMetadata = httpValidationMetadata
     }
 
     /// Returns the raw value stored for a given key name.
