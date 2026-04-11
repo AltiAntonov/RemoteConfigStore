@@ -126,4 +126,47 @@ struct HTTPRemoteConfigFetcherTests {
             try await fetcher.fetchSnapshot()
         }
     }
+
+    @Test
+    func fetcherThrowsNotModifiedForHTTP304Responses() async throws {
+        MockURLProtocol.setRequestHandler { request in
+            let response = HTTPURLResponse(
+                url: try #require(request.url),
+                statusCode: 304,
+                httpVersion: nil,
+                headerFields: [
+                    "ETag": #""config-v2""#,
+                    "Last-Modified": "Sat, 11 Apr 2026 09:30:00 GMT"
+                ]
+            )!
+            return (response, Data())
+        }
+
+        defer { MockURLProtocol.setRequestHandler(nil) }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let mockedSession = URLSession(configuration: configuration)
+
+        let fetcher = HTTPRemoteConfigFetcher(
+            request: HTTPRemoteConfigRequest(
+                url: try #require(URL(string: "https://example.com/config"))
+            ),
+            session: mockedSession
+        )
+
+        await #expect(throws: HTTPRemoteConfigFetcherError.notModified(
+            HTTPRemoteConfigValidationMetadata(
+                entityTag: #""config-v2""#,
+                lastModified: "Sat, 11 Apr 2026 09:30:00 GMT"
+            )
+        )) {
+            try await fetcher.fetchSnapshot(
+                validationMetadata: HTTPRemoteConfigValidationMetadata(
+                    entityTag: #""config-v1""#,
+                    lastModified: "Sat, 11 Apr 2026 07:30:00 GMT"
+                )
+            )
+        }
+    }
 }

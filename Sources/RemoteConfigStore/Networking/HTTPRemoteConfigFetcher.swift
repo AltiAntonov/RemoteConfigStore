@@ -52,6 +52,12 @@ public struct HTTPRemoteConfigFetcher: RemoteConfigFetcher, Sendable {
             throw HTTPRemoteConfigFetcherError.invalidResponseType
         }
 
+        if httpResponse.statusCode == 304 {
+            throw HTTPRemoteConfigFetcherError.notModified(
+                responseValidationMetadata(from: httpResponse) ?? validationMetadata
+            )
+        }
+
         guard (200...299).contains(httpResponse.statusCode) else {
             throw HTTPRemoteConfigFetcherError.invalidResponseStatusCode(httpResponse.statusCode)
         }
