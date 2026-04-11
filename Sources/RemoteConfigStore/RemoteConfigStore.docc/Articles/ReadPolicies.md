@@ -47,3 +47,13 @@ That produces three states:
 3. expired and unusable
 
 If a snapshot is beyond both windows, the store must refresh or throw.
+
+## HTTP cache validation
+
+When you use the built-in HTTP fetcher, the store can also reuse response validation metadata.
+
+- successful HTTP responses can persist `ETag` and `Last-Modified`
+- later refreshes send conditional headers such as `If-None-Match`
+- `304 Not Modified` renews cache freshness without replacing the cached payload
+
+This keeps refreshes explicit while avoiding unnecessary payload downloads when the server config has not changed.

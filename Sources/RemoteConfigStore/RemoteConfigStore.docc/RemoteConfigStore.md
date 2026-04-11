@@ -11,6 +11,7 @@ Offline-first remote configuration caching with TTL, stale fallback, and typed k
 - optional stale fallback during offline or degraded network periods
 - typed keys and primitive accessors for safer reads
 - explicit read policies for cache-first, refresh-first, and stale-while-revalidate style behavior
+- built-in HTTP cache validation with persisted response metadata and `304 Not Modified` revalidation
 
 The package is centered on a few public types:
 

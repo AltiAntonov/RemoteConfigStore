@@ -2,6 +2,24 @@
 
 All notable changes to `RemoteConfigStore` will be documented in this file.
 
+## 0.4.0
+
+HTTP cache validation release.
+
+### Added
+
+- persisted HTTP validation metadata for cached snapshots
+- conditional request header support for `If-None-Match` and `If-Modified-Since`
+- explicit `304 Not Modified` handling in the built-in HTTP fetcher
+- cache revalidation support that renews freshness without replacing an unchanged payload
+- dedicated `HTTP Cache Validation` example scenario in the showcase app
+
+### Changed
+
+- the built-in HTTP fetcher now captures `ETag` and `Last-Modified` response headers
+- the store now reuses cached payload values when HTTP revalidation reports `304 Not Modified`
+- README and DocC now document HTTP cache validation behavior and example coverage
+
 ## 0.3.1
 
 Refresh-result and unchanged-payload update.
