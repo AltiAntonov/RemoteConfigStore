@@ -32,4 +32,40 @@ struct HTTPRemoteConfigRequestTests {
         #expect(urlRequest.value(forHTTPHeaderField: "X-Client") == "RemoteConfigStoreExample")
         #expect(urlRequest.timeoutInterval == 12)
     }
+
+    @Test
+    func requestBuildsConditionalHeadersFromValidationMetadata() throws {
+        let request = HTTPRemoteConfigRequest(
+            url: try #require(URL(string: "https://example.com/config"))
+        )
+        let metadata = HTTPRemoteConfigValidationMetadata(
+            entityTag: #""config-v1""#,
+            lastModified: "Sat, 11 Apr 2026 07:30:00 GMT"
+        )
+
+        let urlRequest = try request.urlRequest(validationMetadata: metadata)
+
+        #expect(urlRequest.value(forHTTPHeaderField: "If-None-Match") == #""config-v1""#)
+        #expect(urlRequest.value(forHTTPHeaderField: "If-Modified-Since") == "Sat, 11 Apr 2026 07:30:00 GMT")
+    }
+
+    @Test
+    func requestKeepsExplicitHeadersWhenValidationMetadataUsesSameFields() throws {
+        let request = HTTPRemoteConfigRequest(
+            url: try #require(URL(string: "https://example.com/config")),
+            headers: [
+                "If-None-Match": #""caller-value""#,
+                "If-Modified-Since": "Fri, 10 Apr 2026 07:30:00 GMT"
+            ]
+        )
+        let metadata = HTTPRemoteConfigValidationMetadata(
+            entityTag: #""config-v1""#,
+            lastModified: "Sat, 11 Apr 2026 07:30:00 GMT"
+        )
+
+        let urlRequest = try request.urlRequest(validationMetadata: metadata)
+
+        #expect(urlRequest.value(forHTTPHeaderField: "If-None-Match") == #""caller-value""#)
+        #expect(urlRequest.value(forHTTPHeaderField: "If-Modified-Since") == "Fri, 10 Apr 2026 07:30:00 GMT")
+    }
 }
