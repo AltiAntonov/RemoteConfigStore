@@ -64,6 +64,28 @@ struct RemoteConfigCacheTests {
     }
 
     @Test
+    func diskCachePersistsHTTPValidationMetadata() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let cache = try DiskCache(directory: directory)
+        let entry = CacheEntry(
+            value: RemoteConfigSnapshot(
+                values: ["new_ui": .bool(true)],
+                fetchedAt: Date(timeIntervalSince1970: 500),
+                httpValidationMetadata: HTTPRemoteConfigValidationMetadata(
+                    entityTag: #""config-v1""#,
+                    lastModified: "Sat, 11 Apr 2026 07:30:00 GMT"
+                )
+            ),
+            expirationDate: Date(timeIntervalSince1970: 560)
+        )
+
+        try cache.save(entry, for: "default")
+        let loaded = try cache.load(for: "default")
+
+        #expect(loaded == entry)
+    }
+
+    @Test
     func diskCacheTreatsCorruptedSnapshotAsCacheMissAndRemovesFile() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let cache = try DiskCache(directory: directory)

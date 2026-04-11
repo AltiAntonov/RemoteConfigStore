@@ -79,6 +79,21 @@ struct RemoteConfigModelsTests {
     }
 
     @Test
+    func snapshotPreservesHTTPValidationMetadata() {
+        let metadata = HTTPRemoteConfigValidationMetadata(
+            entityTag: #""config-v1""#,
+            lastModified: "Sat, 11 Apr 2026 07:30:00 GMT"
+        )
+        let snapshot = RemoteConfigSnapshot(
+            values: ["new_ui": .bool(true)],
+            fetchedAt: Date(timeIntervalSince1970: 100),
+            httpValidationMetadata: metadata
+        )
+
+        #expect(snapshot.httpValidationMetadata == metadata)
+    }
+
+    @Test
     func readPolicyExposesThreeSupportedModes() {
         #expect(ReadPolicy.immediate == .immediate)
         #expect(ReadPolicy.refreshBeforeReturning == .refreshBeforeReturning)
