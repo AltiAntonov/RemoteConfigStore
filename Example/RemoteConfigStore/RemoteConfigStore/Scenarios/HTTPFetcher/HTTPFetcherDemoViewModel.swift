@@ -30,12 +30,16 @@ final class HTTPFetcherDemoViewModel {
     private let endpointURL = URL(string: "https://example.com/remote-config.json")!
     private let protocolHandler = HTTPDemoURLProtocolHandler()
     private var store: RemoteConfigStore?
+    private var mode: HTTPFetcherDemoView.Mode = .standard
 
     var isLoading = false
     var statusMessage = "Load from the mocked HTTP endpoint."
     var errorMessage: String?
     var fetchCount = 0
     var serverRevision = 1
+    var serverEntityTag = "Unavailable"
+    var cachedEntityTag = "Unavailable"
+    var lastResponseType = "No response yet"
     var lastLoadedAt: Date?
     var lastRefreshResult = "No refresh yet"
     var rows: [Row] = []
@@ -44,13 +48,15 @@ final class HTTPFetcherDemoViewModel {
         endpointURL.absoluteString
     }
 
-    func bootstrap() {
+    func bootstrap(mode: HTTPFetcherDemoView.Mode) {
         guard store == nil else {
             return
         }
 
+        self.mode = mode
         serverRevision = protocolHandler.currentRevision
         fetchCount = protocolHandler.fetchCount
+        serverEntityTag = protocolHandler.currentEntityTag
         store = try? makeStore()
     }
 
@@ -64,6 +70,7 @@ final class HTTPFetcherDemoViewModel {
     func advanceRevision() {
         protocolHandler.advanceRevision()
         serverRevision = protocolHandler.currentRevision
+        serverEntityTag = protocolHandler.currentEntityTag
         statusMessage = "Mock server revision advanced. Load again to fetch the new payload."
     }
 
@@ -82,6 +89,9 @@ final class HTTPFetcherDemoViewModel {
             lastLoadedAt = Date()
             fetchCount = protocolHandler.fetchCount
             serverRevision = protocolHandler.currentRevision
+            serverEntityTag = protocolHandler.currentEntityTag
+            cachedEntityTag = snapshot.httpValidationMetadata?.entityTag ?? "Unavailable"
+            lastResponseType = protocolHandler.lastResponseType
             lastRefreshResult = switch result {
             case .updated:
                 "Updated"
@@ -94,7 +104,9 @@ final class HTTPFetcherDemoViewModel {
                 Row(id: "api_host", title: "api_host", value: snapshot.string(for: DemoKeys.apiHost)),
                 Row(id: "request_timeout_ms", title: "request_timeout_ms", value: "\(snapshot.int(for: DemoKeys.requestTimeout))")
             ]
-            statusMessage = "Loaded revision \(snapshot.int(for: DemoKeys.revision)) from the mocked HTTP endpoint."
+            statusMessage = mode == .standard
+                ? "Loaded revision \(snapshot.int(for: DemoKeys.revision)) from the mocked HTTP endpoint."
+                : "Revalidated revision \(snapshot.int(for: DemoKeys.revision)) with HTTP cache validation."
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "HTTP load failed."
@@ -131,6 +143,11 @@ final class HTTPFetcherDemoViewModel {
 private final class HTTPDemoURLProtocolHandler {
     private(set) var fetchCount = 0
     private(set) var currentRevision = 1
+    private(set) var lastResponseType = "No response yet"
+
+    var currentEntityTag: String {
+        #""config-v\#(currentRevision)""#
+    }
 
     func advanceRevision() {
         currentRevision += 1
@@ -139,18 +156,34 @@ private final class HTTPDemoURLProtocolHandler {
     func handle(_ request: URLRequest) throws -> (HTTPURLResponse, Data) {
         fetchCount += 1
 
+        if request.value(forHTTPHeaderField: "If-None-Match") == currentEntityTag {
+            lastResponseType = "304 Not Modified"
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 304,
+                httpVersion: nil,
+                headerFields: [
+                    "ETag": currentEntityTag
+                ]
+            )!
+            return (response, Data())
+        }
+
         let payload = [
             "config_revision": currentRevision,
             "feature.http_config": currentRevision >= 2,
             "api_host": currentRevision >= 2 ? "api-v2.example.com" : "api.example.com",
             "request_timeout_ms": currentRevision >= 2 ? 800 : 1200
         ] as [String: Any]
+        lastResponseType = "200 OK"
 
         let response = HTTPURLResponse(
             url: request.url!,
             statusCode: 200,
             httpVersion: nil,
-            headerFields: nil
+            headerFields: [
+                "ETag": currentEntityTag
+            ]
         )!
         let data = try JSONSerialization.data(withJSONObject: payload)
         return (response, data)

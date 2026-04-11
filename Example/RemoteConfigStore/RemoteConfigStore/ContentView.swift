@@ -20,6 +20,11 @@ struct ContentView: View {
             title: "HTTP Fetcher",
             summary: "Use the built-in URLSession fetcher and URL-based store initializer with a mocked HTTP endpoint.",
             destination: AnyView(HTTPFetcherDemoView())
+        ),
+        .init(
+            title: "HTTP Cache Validation",
+            summary: "See ETag-driven revalidation, `304 Not Modified`, and refreshed cache metadata with the built-in HTTP fetcher.",
+            destination: AnyView(HTTPFetcherDemoView(mode: .cacheValidation))
         )
     ]
 
