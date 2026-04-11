@@ -233,4 +233,102 @@ struct RemoteConfigStoreBehaviorTests {
             Issue.record("Expected an updated refresh result when payload values change.")
         }
     }
+
+    @Test
+    func refreshResultReturnsUnchangedWhenHTTPFetcherReceivesNotModifiedResponse() async throws {
+        StoreHTTPMockURLProtocol.setRequestHandler { request in
+            #expect(request.value(forHTTPHeaderField: "If-None-Match") == #""config-v1""#)
+
+            let response = HTTPURLResponse(
+                url: try #require(request.url),
+                statusCode: 304,
+                httpVersion: nil,
+                headerFields: ["ETag": #""config-v2""#]
+            )!
+            return (response, Data())
+        }
+
+        defer { StoreHTTPMockURLProtocol.setRequestHandler(nil) }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [StoreHTTPMockURLProtocol.self]
+        let mockedSession = URLSession(configuration: configuration)
+        let cached = RemoteConfigSnapshot(
+            values: ["new_ui": .bool(true), "config_revision": .int(1)],
+            fetchedAt: Date().addingTimeInterval(-120),
+            httpValidationMetadata: HTTPRemoteConfigValidationMetadata(entityTag: #""config-v1""#)
+        )
+        let store = try RemoteConfigStore(
+            request: HTTPRemoteConfigRequest(
+                url: try #require(URL(string: "https://example.com/config"))
+            ),
+            cacheDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
+            ttl: 60,
+            session: mockedSession
+        )
+
+        try await store.seedSnapshot(cached, fetchedAt: cached.fetchedAt)
+
+        let result = try await store.refreshResult()
+        let cachedAfterRefresh = try await store.cachedSnapshot()
+
+        switch result {
+        case .unchanged(let snapshot):
+            #expect(snapshot.values == cached.values)
+            #expect(snapshot.fetchedAt > cached.fetchedAt)
+            #expect(snapshot.httpValidationMetadata == HTTPRemoteConfigValidationMetadata(entityTag: #""config-v2""#))
+            #expect(cachedAfterRefresh == snapshot)
+        case .updated:
+            Issue.record("Expected a not-modified HTTP response to reuse the cached payload.")
+        }
+    }
+}
+
+private final class StoreHTTPMockURLProtocol: URLProtocol, @unchecked Sendable {
+    private static let storage = StoreHandlerStorage()
+
+    static func setRequestHandler(
+        _ handler: (@Sendable (URLRequest) throws -> (HTTPURLResponse, Data))?
+    ) {
+        storage.handler = handler
+    }
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        guard let handler = Self.storage.handler else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+            return
+        }
+
+        do {
+            let (response, data) = try handler(request)
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: data)
+            client?.urlProtocolDidFinishLoading(self)
+        } catch {
+            client?.urlProtocol(self, didFailWithError: error)
+        }
+    }
+
+    override func stopLoading() {}
+}
+
+private final class StoreHandlerStorage: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _handler: (@Sendable (URLRequest) throws -> (HTTPURLResponse, Data))?
+
+    var handler: (@Sendable (URLRequest) throws -> (HTTPURLResponse, Data))? {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _handler
+        }
+        set {
+            lock.lock()
+            _handler = newValue
+            lock.unlock()
+        }
+    }
 }

@@ -17,7 +17,7 @@ public actor RemoteConfigStore {
     private let ttlPolicy: TTLPolicy
     private let logger: any Logger
     private let cacheKey = "default"
-    private var refreshTask: Task<RemoteConfigSnapshot, Error>?
+    private var refreshTask: Task<RemoteConfigRefreshResult, Error>?
 
     /// Creates a remote configuration store.
     ///
@@ -103,8 +103,7 @@ public actor RemoteConfigStore {
     /// - Throws: An error describing why the refresh failed.
     public func refreshResult() async throws -> RemoteConfigRefreshResult {
         if let refreshTask {
-            let snapshot = try await refreshTask.value
-            return .updated(snapshot)
+            return try await refreshTask.value
         }
 
         logger.log("Fetching remote config")
@@ -112,22 +111,15 @@ public actor RemoteConfigStore {
         let diskEntry = try diskCache.load(for: cacheKey)
         let cachedEntry = memoryEntry ?? diskEntry
         let task = Task {
-            try await fetcher.fetchSnapshot()
+            try await refreshResult(cachedEntry: cachedEntry)
         }
         refreshTask = task
 
         do {
-            let snapshot = try await task.value
-            let result: RemoteConfigRefreshResult
-            if let cachedEntry, cachedEntry.value.hasSamePayload(as: snapshot) {
-                logger.log("Remote config unchanged")
-                result = .unchanged(snapshot)
-            } else {
-                result = .updated(snapshot)
-            }
+            let result = try await task.value
             let entry = CacheEntry(
                 value: result.snapshot,
-                expirationDate: ttlPolicy.expirationDate(from: snapshot.fetchedAt)
+                expirationDate: ttlPolicy.expirationDate(from: result.snapshot.fetchedAt)
             )
 
             await memoryCache.set(entry, for: cacheKey)
@@ -293,11 +285,55 @@ public actor RemoteConfigStore {
     func seedSnapshot(_ snapshot: RemoteConfigSnapshot, fetchedAt: Date? = nil) async throws {
         let effectiveFetchedAt = fetchedAt ?? snapshot.fetchedAt
         let entry = CacheEntry(
-            value: RemoteConfigSnapshot(values: snapshot.values, fetchedAt: effectiveFetchedAt),
+            value: RemoteConfigSnapshot(
+                values: snapshot.values,
+                fetchedAt: effectiveFetchedAt,
+                httpValidationMetadata: snapshot.httpValidationMetadata
+            ),
             expirationDate: ttlPolicy.expirationDate(from: effectiveFetchedAt)
         )
 
         await memoryCache.set(entry, for: cacheKey)
         try diskCache.save(entry, for: cacheKey)
+    }
+
+    private func refreshResult(
+        cachedEntry: CacheEntry<RemoteConfigSnapshot>?
+    ) async throws -> RemoteConfigRefreshResult {
+        do {
+            let snapshot = try await fetchSnapshot(
+                validationMetadata: cachedEntry?.value.httpValidationMetadata
+            )
+
+            if let cachedEntry, cachedEntry.value.hasSamePayload(as: snapshot) {
+                logger.log("Remote config unchanged")
+                return .unchanged(snapshot)
+            }
+
+            return .updated(snapshot)
+        } catch let HTTPRemoteConfigFetcherError.notModified(metadata) {
+            guard let cachedEntry else {
+                throw HTTPRemoteConfigFetcherError.notModified(metadata)
+            }
+
+            logger.log("Remote config not modified")
+            return .unchanged(
+                RemoteConfigSnapshot(
+                    values: cachedEntry.value.values,
+                    fetchedAt: Date(),
+                    httpValidationMetadata: metadata ?? cachedEntry.value.httpValidationMetadata
+                )
+            )
+        }
+    }
+
+    private func fetchSnapshot(
+        validationMetadata: HTTPRemoteConfigValidationMetadata?
+    ) async throws -> RemoteConfigSnapshot {
+        if let fetcher = fetcher as? HTTPRemoteConfigFetcher {
+            return try await fetcher.fetchSnapshot(validationMetadata: validationMetadata)
+        }
+
+        return try await fetcher.fetchSnapshot()
     }
 }
