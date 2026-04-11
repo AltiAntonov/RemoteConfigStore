@@ -55,7 +55,7 @@ Add `RemoteConfigStore` to your Swift Package Manager dependencies:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AltiAntonov/RemoteConfigStore.git", from: "0.3.0")
+    .package(url: "https://github.com/AltiAntonov/RemoteConfigStore.git", from: "0.3.1")
 ]
 ```
 
@@ -126,6 +126,8 @@ let store = try RemoteConfigStore(
 )
 ```
 
+When the built-in HTTP fetcher receives `ETag` or `Last-Modified` headers, the store persists that validation metadata and uses it for later conditional refreshes.
+
 ## When To Use RemoteConfigStore
 
 Use `RemoteConfigStore` when an app needs server-driven values but should still behave predictably when the network is slow, unavailable, or temporarily failing.
@@ -152,7 +154,7 @@ It is a strong fit for configuration that should be cached locally, refreshed de
 - Cases where config must always be fresh and stale data is never acceptable
   Example soon
 - Projects that need a built-in HTTP client, ETag validation, or observer streams today
-  Example soon
+  Example: [HTTP Cache Validation scenario](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/HTTPFetcher/HTTPFetcherDemoView.swift)
 - Data that is really user content or secure secret material rather than app configuration
   Example soon
 
@@ -238,13 +240,16 @@ Current scenarios:
 - `Feature Flags`
   Code: [FeatureFlagsDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
   Shows typed keys, all three read policies, manual refreshes, revision drift, and the difference between typed accessors and the raw cached payload.
+- `HTTP Fetcher`
+  Code: [HTTPFetcherDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/HTTPFetcher/HTTPFetcherDemoView.swift)
+  Shows the built-in `URLSession` fetcher, URL-based store construction, typed-key reads, and refresh-result reporting.
+- `HTTP Cache Validation`
+  Code: [HTTPFetcherDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/HTTPFetcher/HTTPFetcherDemoView.swift)
+  Shows persisted ETag metadata, conditional requests, `304 Not Modified`, and cache freshness renewal without a payload change.
 
 Planned scenarios:
 
 - `Offline Fallback` - Example soon
-- `HTTP Fetcher`
-  Code: [HTTPFetcherDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/HTTPFetcher/HTTPFetcherDemoView.swift)
-- `ETag Validation` - Example soon
 - `Observers And Metrics` - Example soon
 
 ## Documentation
@@ -252,6 +257,12 @@ Planned scenarios:
 The package now includes a DocC catalog in `Sources/RemoteConfigStore/RemoteConfigStore.docc`.
 
 Once Swift Package Index processes the `.spi.yml` manifest and the DocC catalog, hosted documentation should appear on the package page automatically.
+
+Current DocC coverage includes:
+
+- getting started with injected fetchers
+- read policy behavior
+- built-in HTTP cache validation behavior
 
 ## Example Scenarios
 
@@ -261,11 +272,14 @@ Implemented:
 
 - `Feature Flags`
   Code: [FeatureFlagsDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
+- `HTTP Fetcher`
+  Code: [HTTPFetcherDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/HTTPFetcher/HTTPFetcherDemoView.swift)
+- `HTTP Cache Validation`
+  Code: [HTTPFetcherDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/HTTPFetcher/HTTPFetcherDemoView.swift)
 
 Coming later:
 
 - `Offline Fallback` - Example soon
-- `ETag Validation` - Example soon
 - `Structured Payloads` - Example soon
 
 If you create a fresh example app manually in the future, recommended Xcode options are:

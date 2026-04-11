@@ -51,6 +51,24 @@ let enabled = try await store.bool(for: AppConfigKeys.newUI, using: .immediate)
 let message = try await store.string(for: AppConfigKeys.welcomeMessage, using: .refreshBeforeReturning)
 ```
 
+## Use the built-in HTTP path
+
+When your config comes from a JSON endpoint, you can let the package build the HTTP fetcher for you.
+
+```swift
+let store = try RemoteConfigStore(
+    request: HTTPRemoteConfigRequest(
+        url: URL(string: "https://example.com/remote-config.json")!,
+        headers: ["Authorization": "Bearer token"],
+        timeoutInterval: 8
+    ),
+    cacheDirectory: directory.appendingPathComponent("RemoteConfigStore"),
+    ttl: 300
+)
+```
+
+If the server returns `ETag` or `Last-Modified`, the store persists that metadata and reuses it during later refreshes.
+
 ## Inspect a cached snapshot
 
 Use ``RemoteConfigStore/RemoteConfigStore/cachedSnapshot()`` when you need the currently cached payload without triggering a refresh path.
