@@ -53,6 +53,51 @@ struct HTTPRemoteConfigFetcherTests {
     }
 
     @Test
+    func fetcherAppliesValidationMetadataAndPersistsResponseValidationHeaders() async throws {
+        MockURLProtocol.setRequestHandler { request in
+            #expect(request.value(forHTTPHeaderField: "If-None-Match") == #""config-v1""#)
+            #expect(request.value(forHTTPHeaderField: "If-Modified-Since") == "Sat, 11 Apr 2026 07:30:00 GMT")
+
+            let response = HTTPURLResponse(
+                url: try #require(request.url),
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: [
+                    "ETag": #""config-v2""#,
+                    "Last-Modified": "Sat, 11 Apr 2026 08:30:00 GMT"
+                ]
+            )!
+            let data = Data(#"{"feature.new_ui":true}"#.utf8)
+            return (response, data)
+        }
+
+        defer { MockURLProtocol.setRequestHandler(nil) }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let mockedSession = URLSession(configuration: configuration)
+
+        let fetcher = HTTPRemoteConfigFetcher(
+            request: HTTPRemoteConfigRequest(
+                url: try #require(URL(string: "https://example.com/config"))
+            ),
+            session: mockedSession
+        )
+
+        let snapshot = try await fetcher.fetchSnapshot(
+            validationMetadata: HTTPRemoteConfigValidationMetadata(
+                entityTag: #""config-v1""#,
+                lastModified: "Sat, 11 Apr 2026 07:30:00 GMT"
+            )
+        )
+
+        #expect(snapshot.httpValidationMetadata == HTTPRemoteConfigValidationMetadata(
+            entityTag: #""config-v2""#,
+            lastModified: "Sat, 11 Apr 2026 08:30:00 GMT"
+        ))
+    }
+
+    @Test
     func fetcherThrowsForUnexpectedStatusCode() async throws {
         MockURLProtocol.setRequestHandler { request in
             let response = HTTPURLResponse(

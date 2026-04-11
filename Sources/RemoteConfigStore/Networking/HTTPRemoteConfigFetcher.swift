@@ -33,7 +33,19 @@ public struct HTTPRemoteConfigFetcher: RemoteConfigFetcher, Sendable {
     /// - Returns: A freshly fetched snapshot decoded from the HTTP response payload.
     /// - Throws: A transport, response, or payload decoding error.
     public func fetchSnapshot() async throws -> RemoteConfigSnapshot {
-        let urlRequest = try request.urlRequest()
+        try await fetchSnapshot(validationMetadata: nil)
+    }
+
+    /// Fetches and decodes a remote configuration snapshot using optional HTTP validation metadata.
+    ///
+    /// - Parameter validationMetadata: Previously persisted validation metadata used to build a
+    ///   conditional request.
+    /// - Returns: A freshly fetched snapshot decoded from the HTTP response payload.
+    /// - Throws: A transport, response, or payload decoding error.
+    public func fetchSnapshot(
+        validationMetadata: HTTPRemoteConfigValidationMetadata?
+    ) async throws -> RemoteConfigSnapshot {
+        let urlRequest = try request.urlRequest(validationMetadata: validationMetadata)
         let (data, response) = try await session.data(for: urlRequest)
 
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -44,7 +56,10 @@ public struct HTTPRemoteConfigFetcher: RemoteConfigFetcher, Sendable {
             throw HTTPRemoteConfigFetcherError.invalidResponseStatusCode(httpResponse.statusCode)
         }
 
-        return try RemoteConfigSnapshot(values: decodeValues(from: data))
+        return try RemoteConfigSnapshot(
+            values: decodeValues(from: data),
+            httpValidationMetadata: responseValidationMetadata(from: httpResponse)
+        )
     }
 
     private func decodeValues(from data: Data) throws -> [String: RemoteConfigValue] {
@@ -71,5 +86,20 @@ public struct HTTPRemoteConfigFetcher: RemoteConfigFetcher, Sendable {
         }
 
         return values
+    }
+
+    private func responseValidationMetadata(
+        from response: HTTPURLResponse
+    ) -> HTTPRemoteConfigValidationMetadata? {
+        let metadata = HTTPRemoteConfigValidationMetadata(
+            entityTag: response.value(forHTTPHeaderField: "ETag"),
+            lastModified: response.value(forHTTPHeaderField: "Last-Modified")
+        )
+
+        if metadata == HTTPRemoteConfigValidationMetadata() {
+            return nil
+        }
+
+        return metadata
     }
 }
