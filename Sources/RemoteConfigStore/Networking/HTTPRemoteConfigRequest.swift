@@ -38,11 +38,37 @@ public struct HTTPRemoteConfigRequest: Sendable, Equatable {
     ///
     /// - Returns: A GET request configured with the current URL, headers, and timeout.
     public func urlRequest() throws -> URLRequest {
+        try urlRequest(validationMetadata: nil)
+    }
+
+    /// Builds a `URLRequest` from the current HTTP configuration and optional validation metadata.
+    ///
+    /// - Parameter validationMetadata: Previously persisted HTTP validation values used for
+    ///   conditional requests.
+    /// - Returns: A GET request configured with the current URL, headers, timeout, and
+    ///   conditional validation headers when available.
+    public func urlRequest(
+        validationMetadata: HTTPRemoteConfigValidationMetadata?
+    ) throws -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
 
         for (field, value) in headers {
             request.setValue(value, forHTTPHeaderField: field)
+        }
+
+        if
+            request.value(forHTTPHeaderField: "If-None-Match") == nil,
+            let entityTag = validationMetadata?.entityTag
+        {
+            request.setValue(entityTag, forHTTPHeaderField: "If-None-Match")
+        }
+
+        if
+            request.value(forHTTPHeaderField: "If-Modified-Since") == nil,
+            let lastModified = validationMetadata?.lastModified
+        {
+            request.setValue(lastModified, forHTTPHeaderField: "If-Modified-Since")
         }
 
         if let timeoutInterval {
