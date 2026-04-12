@@ -55,7 +55,7 @@ Add `RemoteConfigStore` to your Swift Package Manager dependencies:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AltiAntonov/RemoteConfigStore.git", from: "0.3.1")
+    .package(url: "https://github.com/AltiAntonov/RemoteConfigStore.git", from: "0.4.0")
 ]
 ```
 
