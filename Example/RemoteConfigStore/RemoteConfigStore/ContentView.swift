@@ -25,6 +25,11 @@ struct ContentView: View {
             title: "HTTP Cache Validation",
             summary: "See ETag-driven revalidation, `304 Not Modified`, and refreshed cache metadata with the built-in HTTP fetcher.",
             destination: AnyView(HTTPFetcherDemoView(mode: .cacheValidation))
+        ),
+        .init(
+            title: "Observability",
+            summary: "Watch refresh updates through the async stream, lightweight hook, and inspection state API.",
+            destination: AnyView(ObservabilityDemoView())
         )
     ]
 
