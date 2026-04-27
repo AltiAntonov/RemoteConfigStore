@@ -16,6 +16,7 @@ public actor RemoteConfigStore {
     private let diskCache: DiskCache
     private let ttlPolicy: TTLPolicy
     private let logger: any Logger
+    private let onUpdate: (@Sendable (RemoteConfigUpdate) -> Void)?
     private let cacheKey = "default"
     private var refreshTask: Task<RemoteConfigRefreshResult, Error>?
     private var updateContinuations: [UUID: AsyncStream<RemoteConfigUpdate>.Continuation] = [:]
@@ -28,18 +29,21 @@ public actor RemoteConfigStore {
     ///   - ttl: The duration a fetched snapshot remains fresh.
     ///   - maxStaleAge: The optional extra window in which stale data remains usable.
     ///   - logger: The logger used for cache and refresh events.
+    ///   - onUpdate: An optional hook called after successful refresh updates.
     /// - Throws: An error if the cache directory cannot be prepared.
     public init(
         fetcher: any RemoteConfigFetcher,
         cacheDirectory: URL,
         ttl: TimeInterval,
         maxStaleAge: TimeInterval? = nil,
-        logger: any Logger = NoopLogger()
+        logger: any Logger = NoopLogger(),
+        onUpdate: (@Sendable (RemoteConfigUpdate) -> Void)? = nil
     ) throws {
         self.fetcher = fetcher
         self.diskCache = try DiskCache(directory: cacheDirectory)
         self.ttlPolicy = TTLPolicy(ttl: ttl, maxStaleAge: maxStaleAge)
         self.logger = logger
+        self.onUpdate = onUpdate
     }
 
     /// Creates a remote configuration store backed by the built-in HTTP fetcher.
@@ -51,6 +55,7 @@ public actor RemoteConfigStore {
     ///   - maxStaleAge: The optional extra window in which stale data remains usable.
     ///   - session: The session used to perform HTTP requests.
     ///   - logger: The logger used for cache and refresh events.
+    ///   - onUpdate: An optional hook called after successful refresh updates.
     /// - Throws: An error if the cache directory cannot be prepared.
     public init(
         request: HTTPRemoteConfigRequest,
@@ -58,14 +63,16 @@ public actor RemoteConfigStore {
         ttl: TimeInterval,
         maxStaleAge: TimeInterval? = nil,
         session: URLSession = .shared,
-        logger: any Logger = NoopLogger()
+        logger: any Logger = NoopLogger(),
+        onUpdate: (@Sendable (RemoteConfigUpdate) -> Void)? = nil
     ) throws {
         try self.init(
             fetcher: HTTPRemoteConfigFetcher(request: request, session: session),
             cacheDirectory: cacheDirectory,
             ttl: ttl,
             maxStaleAge: maxStaleAge,
-            logger: logger
+            logger: logger,
+            onUpdate: onUpdate
         )
     }
 
@@ -384,6 +391,8 @@ public actor RemoteConfigStore {
     }
 
     private func emitUpdate(_ update: RemoteConfigUpdate) {
+        onUpdate?(update)
+
         for continuation in updateContinuations.values {
             continuation.yield(update)
         }
