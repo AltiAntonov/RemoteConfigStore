@@ -235,6 +235,25 @@ struct RemoteConfigStoreBehaviorTests {
     }
 
     @Test
+    func updatesStreamEmitsRefreshEvents() async throws {
+        let fresh = RemoteConfigSnapshot(values: ["new_ui": .bool(true)])
+        let fetcher = TestFetcher(result: .success(fresh))
+        let store = try makeStore(fetcher: fetcher)
+        let updates = await store.updates()
+
+        let updateTask = Task {
+            var iterator = updates.makeAsyncIterator()
+            return await iterator.next()
+        }
+
+        let result = try await store.refreshResult()
+        let update = try #require(await updateTask.value)
+
+        #expect(update.result == result)
+        #expect(update.snapshot == fresh)
+    }
+
+    @Test
     func refreshResultReturnsUnchangedWhenHTTPFetcherReceivesNotModifiedResponse() async throws {
         StoreHTTPMockURLProtocol.setRequestHandler { request in
             #expect(request.value(forHTTPHeaderField: "If-None-Match") == #""config-v1""#)
