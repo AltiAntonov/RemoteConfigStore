@@ -16,8 +16,10 @@ public actor RemoteConfigStore {
     private let diskCache: DiskCache
     private let ttlPolicy: TTLPolicy
     private let logger: any Logger
+    private let onUpdate: (@Sendable (RemoteConfigUpdate) -> Void)?
     private let cacheKey = "default"
     private var refreshTask: Task<RemoteConfigRefreshResult, Error>?
+    private var updateContinuations: [UUID: AsyncStream<RemoteConfigUpdate>.Continuation] = [:]
 
     /// Creates a remote configuration store.
     ///
@@ -27,18 +29,21 @@ public actor RemoteConfigStore {
     ///   - ttl: The duration a fetched snapshot remains fresh.
     ///   - maxStaleAge: The optional extra window in which stale data remains usable.
     ///   - logger: The logger used for cache and refresh events.
+    ///   - onUpdate: An optional hook called after successful refresh updates.
     /// - Throws: An error if the cache directory cannot be prepared.
     public init(
         fetcher: any RemoteConfigFetcher,
         cacheDirectory: URL,
         ttl: TimeInterval,
         maxStaleAge: TimeInterval? = nil,
-        logger: any Logger = NoopLogger()
+        logger: any Logger = NoopLogger(),
+        onUpdate: (@Sendable (RemoteConfigUpdate) -> Void)? = nil
     ) throws {
         self.fetcher = fetcher
         self.diskCache = try DiskCache(directory: cacheDirectory)
         self.ttlPolicy = TTLPolicy(ttl: ttl, maxStaleAge: maxStaleAge)
         self.logger = logger
+        self.onUpdate = onUpdate
     }
 
     /// Creates a remote configuration store backed by the built-in HTTP fetcher.
@@ -50,6 +55,7 @@ public actor RemoteConfigStore {
     ///   - maxStaleAge: The optional extra window in which stale data remains usable.
     ///   - session: The session used to perform HTTP requests.
     ///   - logger: The logger used for cache and refresh events.
+    ///   - onUpdate: An optional hook called after successful refresh updates.
     /// - Throws: An error if the cache directory cannot be prepared.
     public init(
         request: HTTPRemoteConfigRequest,
@@ -57,14 +63,16 @@ public actor RemoteConfigStore {
         ttl: TimeInterval,
         maxStaleAge: TimeInterval? = nil,
         session: URLSession = .shared,
-        logger: any Logger = NoopLogger()
+        logger: any Logger = NoopLogger(),
+        onUpdate: (@Sendable (RemoteConfigUpdate) -> Void)? = nil
     ) throws {
         try self.init(
             fetcher: HTTPRemoteConfigFetcher(request: request, session: session),
             cacheDirectory: cacheDirectory,
             ttl: ttl,
             maxStaleAge: maxStaleAge,
-            logger: logger
+            logger: logger,
+            onUpdate: onUpdate
         )
     }
 
@@ -124,12 +132,44 @@ public actor RemoteConfigStore {
 
             await memoryCache.set(entry, for: cacheKey)
             try diskCache.save(entry, for: cacheKey)
+            emitUpdate(RemoteConfigUpdate(result: result))
             refreshTask = nil
             return result
         } catch {
             refreshTask = nil
             throw error
         }
+    }
+
+    /// Returns a stream of refresh updates emitted after successful cache writes.
+    ///
+    /// Each call creates an independent stream. The stream ends when the consumer stops
+    /// iterating or the stream is deallocated.
+    public func updates() -> AsyncStream<RemoteConfigUpdate> {
+        let id = UUID()
+
+        return AsyncStream { continuation in
+            updateContinuations[id] = continuation
+            continuation.onTermination = { [weak self] _ in
+                Task {
+                    await self?.removeUpdateContinuation(id: id)
+                }
+            }
+        }
+    }
+
+    /// Returns the current cache and refresh state without triggering network work.
+    ///
+    /// - Returns: A snapshot of the store state useful for debugging and development tools.
+    /// - Throws: A file-system error if loading the persisted cache fails.
+    public func inspectionState() async throws -> RemoteConfigStoreInspectionState {
+        let entry = try await cachedEntry()
+
+        return RemoteConfigStoreInspectionState(
+            snapshot: entry?.value,
+            freshness: entry.map { ttlPolicy.freshness($0) },
+            isRefreshInFlight: refreshTask != nil
+        )
     }
 
     /// Returns a snapshot using the supplied read policy.
@@ -335,5 +375,30 @@ public actor RemoteConfigStore {
         }
 
         return try await fetcher.fetchSnapshot()
+    }
+
+    private func cachedEntry() async throws -> CacheEntry<RemoteConfigSnapshot>? {
+        if let entry = await memoryCache.entry(for: cacheKey) {
+            return entry
+        }
+
+        if let entry = try diskCache.load(for: cacheKey) {
+            await memoryCache.set(entry, for: cacheKey)
+            return entry
+        }
+
+        return nil
+    }
+
+    private func emitUpdate(_ update: RemoteConfigUpdate) {
+        onUpdate?(update)
+
+        for continuation in updateContinuations.values {
+            continuation.yield(update)
+        }
+    }
+
+    private func removeUpdateContinuation(id: UUID) {
+        updateContinuations[id] = nil
     }
 }

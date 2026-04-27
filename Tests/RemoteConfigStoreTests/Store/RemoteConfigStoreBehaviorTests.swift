@@ -235,6 +235,75 @@ struct RemoteConfigStoreBehaviorTests {
     }
 
     @Test
+    func updatesStreamEmitsRefreshEvents() async throws {
+        let fresh = RemoteConfigSnapshot(values: ["new_ui": .bool(true)])
+        let fetcher = TestFetcher(result: .success(fresh))
+        let store = try makeStore(fetcher: fetcher)
+        let updates = await store.updates()
+
+        let updateTask = Task {
+            var iterator = updates.makeAsyncIterator()
+            return await iterator.next()
+        }
+
+        let result = try await store.refreshResult()
+        let update = try #require(await updateTask.value)
+
+        #expect(update.result == result)
+        #expect(update.snapshot == fresh)
+    }
+
+    @Test
+    func inspectionStateReportsCachedSnapshotFreshnessAndRefreshActivity() async throws {
+        let fetcher = ControlledFetcher()
+        let store = try makeStore(fetcher: fetcher, ttl: 60)
+        let cached = RemoteConfigSnapshot(
+            values: ["new_ui": .bool(true)],
+            fetchedAt: Date()
+        )
+
+        try await store.seedSnapshot(cached)
+
+        async let refresh = store.refresh()
+        await fetcher.waitForFetchStart()
+
+        let stateDuringRefresh = try await store.inspectionState()
+        await fetcher.succeed(with: RemoteConfigSnapshot(values: ["new_ui": .bool(false)]))
+        _ = try await refresh
+        let stateAfterRefresh = try await store.inspectionState()
+
+        #expect(stateDuringRefresh.snapshot == cached)
+        #expect(stateDuringRefresh.freshness == .fresh)
+        #expect(stateDuringRefresh.isRefreshInFlight)
+        #expect(stateAfterRefresh.snapshot?.values["new_ui"] == .bool(false))
+        #expect(stateAfterRefresh.isRefreshInFlight == false)
+    }
+
+    @Test
+    func updateHookReceivesRefreshEvents() async throws {
+        let fresh = RemoteConfigSnapshot(values: ["new_ui": .bool(true)])
+        let fetcher = TestFetcher(result: .success(fresh))
+        let updates = UpdateRecorder()
+        let store = try makeStore(
+            fetcher: fetcher,
+            onUpdate: { update in
+                Task {
+                    await updates.record(update)
+                }
+            }
+        )
+
+        let result = try await store.refreshResult()
+        try await waitUntil {
+            await updates.recordedUpdates.count == 1
+        }
+
+        let recordedUpdate = try #require(await updates.recordedUpdates.first)
+        #expect(recordedUpdate.result == result)
+        #expect(recordedUpdate.snapshot == fresh)
+    }
+
+    @Test
     func refreshResultReturnsUnchangedWhenHTTPFetcherReceivesNotModifiedResponse() async throws {
         StoreHTTPMockURLProtocol.setRequestHandler { request in
             #expect(request.value(forHTTPHeaderField: "If-None-Match") == #""config-v1""#)

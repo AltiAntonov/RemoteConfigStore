@@ -12,12 +12,15 @@ Offline-first remote configuration caching with TTL, stale fallback, and typed k
 - typed keys and primitive accessors for safer reads
 - explicit read policies for cache-first, refresh-first, and stale-while-revalidate style behavior
 - built-in HTTP cache validation with persisted response metadata and `304 Not Modified` revalidation
+- refresh update observation and cache inspection state
 
 The package is centered on a few public types:
 
 - ``RemoteConfigStore/RemoteConfigStore``
 - ``RemoteConfigFetcher``
 - ``RemoteConfigSnapshot``
+- ``RemoteConfigUpdate``
+- ``RemoteConfigStoreInspectionState``
 - ``RemoteConfigKey``
 - ``RemoteConfigValue``
 - ``ReadPolicy``
@@ -28,12 +31,15 @@ The package is centered on a few public types:
 
 - <doc:GettingStarted>
 - <doc:ReadPolicies>
+- <doc:Observability>
 
 ### Core Types
 
 - ``RemoteConfigStore/RemoteConfigStore``
 - ``RemoteConfigFetcher``
 - ``RemoteConfigSnapshot``
+- ``RemoteConfigUpdate``
+- ``RemoteConfigStoreInspectionState``
 - ``RemoteConfigKey``
 - ``ReadPolicy``
 - ``RemoteConfigStoreError``
