@@ -75,14 +75,16 @@ enum TestError: Error, Equatable {
 func makeStore(
     fetcher: some RemoteConfigFetcher,
     ttl: TimeInterval = 60,
-    maxStaleAge: TimeInterval? = nil
+    maxStaleAge: TimeInterval? = nil,
+    onUpdate: (@Sendable (RemoteConfigUpdate) -> Void)? = nil
 ) throws -> RemoteConfigStore {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     return try RemoteConfigStore(
         fetcher: fetcher,
         cacheDirectory: directory,
         ttl: ttl,
-        maxStaleAge: maxStaleAge
+        maxStaleAge: maxStaleAge,
+        onUpdate: onUpdate
     )
 }
 
@@ -101,4 +103,12 @@ func waitUntil(
     }
 
     throw TestError.conditionTimedOut
+}
+
+actor UpdateRecorder {
+    private(set) var recordedUpdates: [RemoteConfigUpdate] = []
+
+    func record(_ update: RemoteConfigUpdate) {
+        recordedUpdates.append(update)
+    }
 }
