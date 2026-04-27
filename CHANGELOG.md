@@ -2,6 +2,23 @@
 
 All notable changes to `RemoteConfigStore` will be documented in this file.
 
+## 0.5.0
+
+Observability and inspection release.
+
+### Added
+
+- `RemoteConfigUpdate` for refresh update events
+- `updates()` on `RemoteConfigStore` for async refresh update observation
+- optional `onUpdate` hook for lightweight refresh visibility
+- `RemoteConfigStoreInspectionState` for cache and refresh inspection
+- `inspectionState()` on `RemoteConfigStore`
+- dedicated `Observability` example scenario in the showcase app
+
+### Changed
+
+- README and DocC now document update observation, update hooks, and inspection state
+
 ## 0.4.0
 
 HTTP cache validation release.
