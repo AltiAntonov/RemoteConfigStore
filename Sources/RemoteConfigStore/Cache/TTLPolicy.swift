@@ -65,4 +65,22 @@ struct TTLPolicy: Sendable, Equatable {
     func isUsable(_ entry: CacheEntry<RemoteConfigSnapshot>, now: Date = Date()) -> Bool {
         isFresh(entry, now: now) || isWithinMaxStaleAge(entry, now: now)
     }
+
+    /// Returns the freshness state for a cache entry.
+    ///
+    /// - Parameters:
+    ///   - entry: The cache entry to inspect.
+    ///   - now: The reference time used for the check.
+    /// - Returns: The entry freshness state.
+    func freshness(_ entry: CacheEntry<RemoteConfigSnapshot>, now: Date = Date()) -> SnapshotFreshness {
+        if isFresh(entry, now: now) {
+            return .fresh
+        }
+
+        if isWithinMaxStaleAge(entry, now: now) {
+            return .stale
+        }
+
+        return .expired
+    }
 }

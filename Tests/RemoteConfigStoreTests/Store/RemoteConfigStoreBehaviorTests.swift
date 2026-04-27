@@ -254,6 +254,32 @@ struct RemoteConfigStoreBehaviorTests {
     }
 
     @Test
+    func inspectionStateReportsCachedSnapshotFreshnessAndRefreshActivity() async throws {
+        let fetcher = ControlledFetcher()
+        let store = try makeStore(fetcher: fetcher, ttl: 60)
+        let cached = RemoteConfigSnapshot(
+            values: ["new_ui": .bool(true)],
+            fetchedAt: Date()
+        )
+
+        try await store.seedSnapshot(cached)
+
+        async let refresh = store.refresh()
+        await fetcher.waitForFetchStart()
+
+        let stateDuringRefresh = try await store.inspectionState()
+        await fetcher.succeed(with: RemoteConfigSnapshot(values: ["new_ui": .bool(false)]))
+        _ = try await refresh
+        let stateAfterRefresh = try await store.inspectionState()
+
+        #expect(stateDuringRefresh.snapshot == cached)
+        #expect(stateDuringRefresh.freshness == .fresh)
+        #expect(stateDuringRefresh.isRefreshInFlight)
+        #expect(stateAfterRefresh.snapshot?.values["new_ui"] == .bool(false))
+        #expect(stateAfterRefresh.isRefreshInFlight == false)
+    }
+
+    @Test
     func refreshResultReturnsUnchangedWhenHTTPFetcherReceivesNotModifiedResponse() async throws {
         StoreHTTPMockURLProtocol.setRequestHandler { request in
             #expect(request.value(forHTTPHeaderField: "If-None-Match") == #""config-v1""#)
