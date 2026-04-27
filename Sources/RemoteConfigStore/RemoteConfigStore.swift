@@ -151,6 +151,20 @@ public actor RemoteConfigStore {
         }
     }
 
+    /// Returns the current cache and refresh state without triggering network work.
+    ///
+    /// - Returns: A snapshot of the store state useful for debugging and development tools.
+    /// - Throws: A file-system error if loading the persisted cache fails.
+    public func inspectionState() async throws -> RemoteConfigStoreInspectionState {
+        let entry = try await cachedEntry()
+
+        return RemoteConfigStoreInspectionState(
+            snapshot: entry?.value,
+            freshness: entry.map { ttlPolicy.freshness($0) },
+            isRefreshInFlight: refreshTask != nil
+        )
+    }
+
     /// Returns a snapshot using the supplied read policy.
     ///
     /// - Parameter policy: The strategy used to balance cached reads against refresh work.
@@ -354,6 +368,19 @@ public actor RemoteConfigStore {
         }
 
         return try await fetcher.fetchSnapshot()
+    }
+
+    private func cachedEntry() async throws -> CacheEntry<RemoteConfigSnapshot>? {
+        if let entry = await memoryCache.entry(for: cacheKey) {
+            return entry
+        }
+
+        if let entry = try diskCache.load(for: cacheKey) {
+            await memoryCache.set(entry, for: cacheKey)
+            return entry
+        }
+
+        return nil
     }
 
     private func emitUpdate(_ update: RemoteConfigUpdate) {
