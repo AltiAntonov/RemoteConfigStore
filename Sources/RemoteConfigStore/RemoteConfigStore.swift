@@ -18,6 +18,7 @@ public actor RemoteConfigStore {
     private let logger: any Logger
     private let cacheKey = "default"
     private var refreshTask: Task<RemoteConfigRefreshResult, Error>?
+    private var updateContinuations: [UUID: AsyncStream<RemoteConfigUpdate>.Continuation] = [:]
 
     /// Creates a remote configuration store.
     ///
@@ -124,11 +125,29 @@ public actor RemoteConfigStore {
 
             await memoryCache.set(entry, for: cacheKey)
             try diskCache.save(entry, for: cacheKey)
+            emitUpdate(RemoteConfigUpdate(result: result))
             refreshTask = nil
             return result
         } catch {
             refreshTask = nil
             throw error
+        }
+    }
+
+    /// Returns a stream of refresh updates emitted after successful cache writes.
+    ///
+    /// Each call creates an independent stream. The stream ends when the consumer stops
+    /// iterating or the stream is deallocated.
+    public func updates() -> AsyncStream<RemoteConfigUpdate> {
+        let id = UUID()
+
+        return AsyncStream { continuation in
+            updateContinuations[id] = continuation
+            continuation.onTermination = { [weak self] _ in
+                Task {
+                    await self?.removeUpdateContinuation(id: id)
+                }
+            }
         }
     }
 
@@ -335,5 +354,15 @@ public actor RemoteConfigStore {
         }
 
         return try await fetcher.fetchSnapshot()
+    }
+
+    private func emitUpdate(_ update: RemoteConfigUpdate) {
+        for continuation in updateContinuations.values {
+            continuation.yield(update)
+        }
+    }
+
+    private func removeUpdateContinuation(id: UUID) {
+        updateContinuations[id] = nil
     }
 }
