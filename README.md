@@ -36,6 +36,7 @@
 - injected fetcher protocol for remote loading
 - typed key access for primitive values
 - actor-backed store implementation for serialized state access
+- async update stream, lightweight update hook, and inspection state for refresh visibility
 
 The public API is intentionally centered on:
 
@@ -43,6 +44,8 @@ The public API is intentionally centered on:
 - `RemoteConfigFetcher`
 - `RemoteConfigSnapshot`
 - `RemoteConfigRefreshResult`
+- `RemoteConfigUpdate`
+- `RemoteConfigStoreInspectionState`
 - `RemoteConfigKey`
 - `RemoteConfigValue`
 - `ReadPolicy`
@@ -55,7 +58,7 @@ Add `RemoteConfigStore` to your Swift Package Manager dependencies:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AltiAntonov/RemoteConfigStore.git", from: "0.4.0")
+    .package(url: "https://github.com/AltiAntonov/RemoteConfigStore.git", from: "0.5.0")
 ]
 ```
 
@@ -128,6 +131,20 @@ let store = try RemoteConfigStore(
 
 When the built-in HTTP fetcher receives `ETag` or `Last-Modified` headers, the store persists that validation metadata and uses it for later conditional refreshes.
 
+To observe refresh activity, consume the update stream or pass a lightweight hook during initialization:
+
+```swift
+let updates = await store.updates()
+Task {
+    for await update in updates {
+        print("Refresh event:", update.result)
+    }
+}
+
+let state = try await store.inspectionState()
+print("Freshness:", state.freshness as Any)
+```
+
 ## When To Use RemoteConfigStore
 
 Use `RemoteConfigStore` when an app needs server-driven values but should still behave predictably when the network is slow, unavailable, or temporarily failing.
@@ -153,8 +170,8 @@ It is a strong fit for configuration that should be cached locally, refreshed de
   Example soon
 - Cases where config must always be fresh and stale data is never acceptable
   Example soon
-- Projects that need a built-in HTTP client, ETag validation, or observer streams today
-  Example: [HTTP Cache Validation scenario](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/HTTPFetcher/HTTPFetcherDemoView.swift)
+- Projects that need analytics-grade event collection or complex observability pipelines
+  Example soon
 - Data that is really user content or secure secret material rather than app configuration
   Example soon
 
@@ -246,11 +263,13 @@ Current scenarios:
 - `HTTP Cache Validation`
   Code: [HTTPFetcherDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/HTTPFetcher/HTTPFetcherDemoView.swift)
   Shows persisted ETag metadata, conditional requests, `304 Not Modified`, and cache freshness renewal without a payload change.
+- `Observability`
+  Code: [ObservabilityDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/Observability/ObservabilityDemoView.swift)
+  Shows the async update stream, lightweight update hook, and inspection state API.
 
 Planned scenarios:
 
 - `Offline Fallback` - Example soon
-- `Observers And Metrics` - Example soon
 
 ## Documentation
 
@@ -263,6 +282,7 @@ Current DocC coverage includes:
 - getting started with injected fetchers
 - read policy behavior
 - built-in HTTP cache validation behavior
+- update observation and inspection state
 
 ## Example Scenarios
 
@@ -276,6 +296,8 @@ Implemented:
   Code: [HTTPFetcherDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/HTTPFetcher/HTTPFetcherDemoView.swift)
 - `HTTP Cache Validation`
   Code: [HTTPFetcherDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/HTTPFetcher/HTTPFetcherDemoView.swift)
+- `Observability`
+  Code: [ObservabilityDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/Observability/ObservabilityDemoView.swift)
 
 Coming later:
 

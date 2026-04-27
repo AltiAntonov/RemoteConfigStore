@@ -69,6 +69,27 @@ let store = try RemoteConfigStore(
 
 If the server returns `ETag` or `Last-Modified`, the store persists that metadata and reuses it during later refreshes.
 
+## Observe refresh updates
+
+Use ``RemoteConfigStore/RemoteConfigStore/updates()`` when you want to react to successful refresh updates.
+
+```swift
+let updates = await store.updates()
+
+Task {
+    for await update in updates {
+        print("Refresh result:", update.result)
+    }
+}
+```
+
+Use ``RemoteConfigStore/RemoteConfigStore/inspectionState()`` when development tools or debug UI need current cache state without triggering a network refresh.
+
+```swift
+let state = try await store.inspectionState()
+print(state.freshness as Any)
+```
+
 ## Inspect a cached snapshot
 
 Use ``RemoteConfigStore/RemoteConfigStore/cachedSnapshot()`` when you need the currently cached payload without triggering a refresh path.
@@ -81,4 +102,5 @@ let enabled = snapshot.bool(for: AppConfigKeys.newUI)
 ## Next steps
 
 - Learn how each read mode behaves in <doc:ReadPolicies>.
+- Learn how refresh observation works in <doc:Observability>.
 - Use the example app in `Example/RemoteConfigStore` to see policy differences interactively.
