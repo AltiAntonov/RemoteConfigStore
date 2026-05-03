@@ -290,6 +290,12 @@ final class DemoViewModel {
             return String(format: "%.2f", value)
         case let .string(value):
             return value
+        case let .object(value):
+            return "\(value.count) fields"
+        case let .array(value):
+            return "\(value.count) items"
+        case .null:
+            return "null"
         }
     }
 }
