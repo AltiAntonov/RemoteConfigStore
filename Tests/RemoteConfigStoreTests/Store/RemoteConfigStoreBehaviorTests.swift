@@ -146,6 +146,30 @@ struct RemoteConfigStoreBehaviorTests {
     }
 
     @Test
+    func decodedValueReturnsStructuredValueUsingPolicy() async throws {
+        let snapshot = RemoteConfigSnapshot(values: [
+            "paywall": .object([
+                "title": .string("Pro"),
+                "enabled": .bool(true),
+                "tiers": .array([
+                    .string("monthly"),
+                    .string("yearly"),
+                ]),
+            ]),
+        ])
+        let fetcher = TestFetcher(result: .success(snapshot))
+        let store = try makeStore(fetcher: fetcher)
+
+        let paywall = try await store.decodedValue(StorePaywallConfig.self, for: "paywall")
+
+        #expect(paywall == StorePaywallConfig(
+            title: "Pro",
+            enabled: true,
+            tiers: ["monthly", "yearly"]
+        ))
+    }
+
+    @Test
     func convenienceInitializerBuildsStoreFromHTTPRequest() async throws {
         let cacheDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let url = try #require(URL(string: "https://example.com/config"))
@@ -351,6 +375,12 @@ struct RemoteConfigStoreBehaviorTests {
             Issue.record("Expected a not-modified HTTP response to reuse the cached payload.")
         }
     }
+}
+
+private struct StorePaywallConfig: Decodable, Equatable, Sendable {
+    let title: String
+    let enabled: Bool
+    let tiers: [String]
 }
 
 private final class StoreHTTPMockURLProtocol: URLProtocol, @unchecked Sendable {

@@ -86,6 +86,39 @@ struct RemoteConfigModelsTests {
     }
 
     @Test
+    func snapshotDecodesStructuredValue() throws {
+        let snapshot = RemoteConfigSnapshot(
+            values: [
+                "paywall": .object([
+                    "title": .string("Pro"),
+                    "enabled": .bool(true),
+                    "tiers": .array([
+                        .string("monthly"),
+                        .string("yearly"),
+                    ]),
+                ]),
+            ]
+        )
+
+        let paywall = try snapshot.decodedValue(PaywallConfig.self, for: "paywall")
+
+        #expect(paywall == PaywallConfig(
+            title: "Pro",
+            enabled: true,
+            tiers: ["monthly", "yearly"]
+        ))
+    }
+
+    @Test
+    func snapshotDecodedValueThrowsWhenKeyIsMissing() {
+        let snapshot = RemoteConfigSnapshot(values: [:])
+
+        #expect(throws: RemoteConfigDecodingError.missingValue(key: "paywall")) {
+            try snapshot.decodedValue(PaywallConfig.self, for: "paywall")
+        }
+    }
+
+    @Test
     func snapshotReportsAgeAndFreshness() {
         let now = Date(timeIntervalSince1970: 1_000)
         let snapshot = RemoteConfigSnapshot(
@@ -120,4 +153,10 @@ struct RemoteConfigModelsTests {
         #expect(ReadPolicy.refreshBeforeReturning == .refreshBeforeReturning)
         #expect(ReadPolicy.immediateWithBackgroundRefresh == .immediateWithBackgroundRefresh)
     }
+}
+
+private struct PaywallConfig: Decodable, Equatable, Sendable {
+    let title: String
+    let enabled: Bool
+    let tiers: [String]
 }

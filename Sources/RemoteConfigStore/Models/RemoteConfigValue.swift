@@ -59,4 +59,23 @@ public indirect enum RemoteConfigValue: Codable, Sendable, Equatable {
     public var isNull: Bool {
         self == .null
     }
+
+    var jsonObject: Any {
+        switch self {
+        case .bool(let value):
+            return value
+        case .int(let value):
+            return value
+        case .double(let value):
+            return value
+        case .string(let value):
+            return value
+        case .object(let value):
+            return value.mapValues(\.jsonObject)
+        case .array(let value):
+            return value.map(\.jsonObject)
+        case .null:
+            return NSNull()
+        }
+    }
 }

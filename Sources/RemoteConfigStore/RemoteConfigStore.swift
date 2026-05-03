@@ -322,6 +322,23 @@ public actor RemoteConfigStore {
         return snapshot.value(for: key.name)?.stringValue ?? key.defaultValue
     }
 
+    /// Decodes a stored value into a consumer-defined type.
+    ///
+    /// - Parameters:
+    ///   - type: The `Decodable` type to create.
+    ///   - key: The raw key name to decode from.
+    ///   - policy: The strategy used to load the backing snapshot.
+    /// - Returns: The decoded value.
+    /// - Throws: An error when no usable snapshot can be loaded or decoding fails.
+    public func decodedValue<Value: Decodable & Sendable>(
+        _ type: Value.Type = Value.self,
+        for key: String,
+        using policy: ReadPolicy = .immediate
+    ) async throws -> Value {
+        let snapshot = try await snapshot(using: policy)
+        return try snapshot.decodedValue(type, for: key)
+    }
+
     func seedSnapshot(_ snapshot: RemoteConfigSnapshot, fetchedAt: Date? = nil) async throws {
         let effectiveFetchedAt = fetchedAt ?? snapshot.fetchedAt
         let entry = CacheEntry(

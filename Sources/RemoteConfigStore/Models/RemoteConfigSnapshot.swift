@@ -74,6 +74,37 @@ public struct RemoteConfigSnapshot: Codable, Sendable, Equatable {
         value(for: key, defaultingTo: \.stringValue)
     }
 
+    /// Decodes a stored value into a consumer-defined type.
+    ///
+    /// - Parameters:
+    ///   - type: The `Decodable` type to create.
+    ///   - key: The raw key name to decode from.
+    /// - Returns: The decoded value.
+    /// - Throws: `RemoteConfigDecodingError` when the key is missing or decoding fails.
+    public func decodedValue<Value: Decodable>(
+        _ type: Value.Type = Value.self,
+        for key: String
+    ) throws -> Value {
+        guard let value = value(for: key) else {
+            throw RemoteConfigDecodingError.missingValue(key: key)
+        }
+
+        do {
+            let data = try JSONSerialization.data(
+                withJSONObject: value.jsonObject,
+                options: [.fragmentsAllowed]
+            )
+            return try JSONDecoder().decode(type, from: data)
+        } catch let error as DecodingError {
+            throw RemoteConfigDecodingError.decodingFailed(
+                key: key,
+                description: String(describing: error)
+            )
+        } catch {
+            throw RemoteConfigDecodingError.invalidJSONValue(key: key)
+        }
+    }
+
     /// Returns the snapshot age in seconds relative to the supplied reference date.
     ///
     /// - Parameter now: The date used as the comparison point.
