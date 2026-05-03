@@ -21,6 +21,27 @@ struct RemoteConfigModelsTests {
     }
 
     @Test
+    func remoteConfigValueStoresNestedTypes() throws {
+        let value = RemoteConfigValue.object([
+            "title": .string("Welcome"),
+            "enabled": .bool(true),
+            "variants": .array([
+                .string("control"),
+                .string("treatment"),
+            ]),
+            "subtitle": .null,
+        ])
+
+        let object = try #require(value.objectValue)
+        #expect(object["title"]?.stringValue == "Welcome")
+        #expect(object["enabled"]?.boolValue == true)
+        #expect(object["subtitle"] == .null)
+
+        let variants = try #require(object["variants"]?.arrayValue)
+        #expect(variants.map(\.stringValue) == ["control", "treatment"])
+    }
+
+    @Test
     func typedKeyStoresNameAndDefaultValue() {
         let key = RemoteConfigKey<Bool>("new_ui", defaultValue: false)
 

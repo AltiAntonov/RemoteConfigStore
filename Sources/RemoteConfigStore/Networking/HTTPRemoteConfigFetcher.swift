@@ -75,23 +75,28 @@ public struct HTTPRemoteConfigFetcher: RemoteConfigFetcher, Sendable {
             throw HTTPRemoteConfigFetcherError.invalidPayload
         }
 
-        var values: [String: RemoteConfigValue] = [:]
-        for (key, rawValue) in payload {
-            switch rawValue {
-            case let value as Bool:
-                values[key] = .bool(value)
-            case let value as Int:
-                values[key] = .int(value)
-            case let value as Double:
-                values[key] = .double(value)
-            case let value as String:
-                values[key] = .string(value)
-            default:
-                throw HTTPRemoteConfigFetcherError.invalidPayload
-            }
-        }
+        return try payload.mapValues(decodeValue)
+    }
 
-        return values
+    private func decodeValue(_ rawValue: Any) throws -> RemoteConfigValue {
+        switch rawValue {
+        case let value as Bool:
+            return .bool(value)
+        case let value as Int:
+            return .int(value)
+        case let value as Double:
+            return .double(value)
+        case let value as String:
+            return .string(value)
+        case let value as [String: Any]:
+            return try .object(value.mapValues(decodeValue))
+        case let value as [Any]:
+            return try .array(value.map(decodeValue))
+        case is NSNull:
+            return .null
+        default:
+            throw HTTPRemoteConfigFetcherError.invalidPayload
+        }
     }
 
     private func responseValidationMetadata(
