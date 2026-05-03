@@ -10,6 +10,7 @@ Offline-first remote configuration caching with TTL, stale fallback, and typed k
 - configurable freshness windows
 - optional stale fallback during offline or degraded network periods
 - typed keys and primitive accessors for safer reads
+- nested values and structured `Decodable` access for small config objects
 - explicit read policies for cache-first, refresh-first, and stale-while-revalidate style behavior
 - built-in HTTP cache validation with persisted response metadata and `304 Not Modified` revalidation
 - refresh update observation and cache inspection state
@@ -23,6 +24,7 @@ The package is centered on a few public types:
 - ``RemoteConfigStoreInspectionState``
 - ``RemoteConfigKey``
 - ``RemoteConfigValue``
+- ``RemoteConfigDecodingError``
 - ``ReadPolicy``
 
 ## Topics
@@ -31,6 +33,7 @@ The package is centered on a few public types:
 
 - <doc:GettingStarted>
 - <doc:ReadPolicies>
+- <doc:StructuredDecoding>
 - <doc:Observability>
 
 ### Core Types
@@ -41,5 +44,7 @@ The package is centered on a few public types:
 - ``RemoteConfigUpdate``
 - ``RemoteConfigStoreInspectionState``
 - ``RemoteConfigKey``
+- ``RemoteConfigValue``
 - ``ReadPolicy``
 - ``RemoteConfigStoreError``
+- ``RemoteConfigDecodingError``

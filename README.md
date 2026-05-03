@@ -15,6 +15,7 @@
     <a href="#features">Features</a> ·
     <a href="#installation">Installation</a> ·
     <a href="#quick-start">Quick Start</a> ·
+    <a href="#structured-values">Structured Values</a> ·
     <a href="#when-to-use-remoteconfigstore">When To Use</a> ·
     <a href="#good-fits">Good Fits</a> ·
     <a href="#weaker-fits">Weaker Fits</a> ·
@@ -35,6 +36,8 @@
 - optional stale fallback using `maxStaleAge`
 - injected fetcher protocol for remote loading
 - typed key access for primitive values
+- nested object, array, and null values
+- structured `Decodable` reads for consumer-defined config models
 - actor-backed store implementation for serialized state access
 - async update stream, lightweight update hook, and inspection state for refresh visibility
 
@@ -48,6 +51,7 @@ The public API is intentionally centered on:
 - `RemoteConfigStoreInspectionState`
 - `RemoteConfigKey`
 - `RemoteConfigValue`
+- `RemoteConfigDecodingError`
 - `ReadPolicy`
 - `RemoteConfigStoreError`
 - `Logger`
@@ -145,6 +149,33 @@ let state = try await store.inspectionState()
 print("Freshness:", state.freshness as Any)
 ```
 
+## Structured Values
+
+Use primitive typed keys for simple flags and tuning values. Use structured decoding when one remote config key owns a small nested object.
+
+```swift
+struct PaywallConfig: Decodable, Sendable {
+    let title: String
+    let enabled: Bool
+    let tiers: [String]
+}
+
+let paywall = try await store.decodedValue(
+    PaywallConfig.self,
+    for: "paywall",
+    using: .immediate
+)
+```
+
+`RemoteConfigSnapshot` also supports structured decoding when you already have a snapshot:
+
+```swift
+let snapshot = try await store.cachedSnapshot()
+let paywall = try snapshot.decodedValue(PaywallConfig.self, for: "paywall")
+```
+
+If the key is missing or the stored value cannot be decoded into the requested type, the call throws `RemoteConfigDecodingError`.
+
 ## When To Use RemoteConfigStore
 
 Use `RemoteConfigStore` when an app needs server-driven values but should still behave predictably when the network is slow, unavailable, or temporarily failing.
@@ -166,7 +197,7 @@ It is a strong fit for configuration that should be cached locally, refreshed de
 
 ## Weaker Fits
 
-- Deeply nested or highly structured configuration documents
+- Large documents that should be modeled as app content rather than operational config
   Example soon
 - Cases where config must always be fresh and stale data is never acceptable
   Example soon
@@ -240,6 +271,9 @@ That creates three states:
 `RemoteConfigStore` keeps its store-specific error surface intentionally small.
 
 - `RemoteConfigStoreError.noCachedSnapshot`: returned when neither memory nor disk cache contains a snapshot
+- `RemoteConfigDecodingError.missingValue(key:)`: returned when a structured decode asks for a key that is not present
+- `RemoteConfigDecodingError.invalidJSONValue(key:)`: returned when a stored value cannot be converted to JSON data for decoding
+- `RemoteConfigDecodingError.decodingFailed(key:description:)`: returned when `JSONDecoder` cannot decode the stored value into the requested type
 
 Other failures are propagated from the underlying component that failed:
 
@@ -270,6 +304,7 @@ Current scenarios:
 Planned scenarios:
 
 - `Offline Fallback` - Example soon
+- `Structured Payloads` - Example soon
 
 ## Documentation
 
@@ -283,6 +318,7 @@ Current DocC coverage includes:
 - read policy behavior
 - built-in HTTP cache validation behavior
 - update observation and inspection state
+- structured value decoding
 
 ## Example Scenarios
 

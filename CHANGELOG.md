@@ -2,6 +2,19 @@
 
 All notable changes to `RemoteConfigStore` will be documented in this file.
 
+## Unreleased
+
+Structured payload release.
+
+### Added
+
+- nested `RemoteConfigValue` cases for objects, arrays, and nulls
+- recursive JSON decoding in the built-in HTTP fetcher
+- `RemoteConfigDecodingError` for structured value decode failures
+- `decodedValue(_:for:)` on `RemoteConfigSnapshot`
+- `decodedValue(_:for:using:)` on `RemoteConfigStore`
+- DocC article for structured decoding
+
 ## 0.5.0
 
 Observability and inspection release.

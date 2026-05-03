@@ -51,6 +51,24 @@ let enabled = try await store.bool(for: AppConfigKeys.newUI, using: .immediate)
 let message = try await store.string(for: AppConfigKeys.welcomeMessage, using: .refreshBeforeReturning)
 ```
 
+## Decode structured values
+
+Use ``RemoteConfigStore/RemoteConfigStore/decodedValue(_:for:using:)`` when one config key contains a small nested object.
+
+```swift
+struct PaywallConfig: Decodable, Sendable {
+    let title: String
+    let enabled: Bool
+    let tiers: [String]
+}
+
+let paywall = try await store.decodedValue(
+    PaywallConfig.self,
+    for: "paywall",
+    using: .immediate
+)
+```
+
 ## Use the built-in HTTP path
 
 When your config comes from a JSON endpoint, you can let the package build the HTTP fetcher for you.
@@ -102,5 +120,6 @@ let enabled = snapshot.bool(for: AppConfigKeys.newUI)
 ## Next steps
 
 - Learn how each read mode behaves in <doc:ReadPolicies>.
+- Learn how structured values work in <doc:StructuredDecoding>.
 - Learn how refresh observation works in <doc:Observability>.
 - Use the example app in `Example/RemoteConfigStore` to see policy differences interactively.
