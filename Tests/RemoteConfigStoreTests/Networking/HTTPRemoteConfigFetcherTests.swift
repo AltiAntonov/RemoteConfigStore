@@ -53,6 +53,52 @@ struct HTTPRemoteConfigFetcherTests {
     }
 
     @Test
+    func fetcherDecodesNestedJSONPayloadIntoSnapshot() async throws {
+        MockURLProtocol.setRequestHandler { request in
+            let response = HTTPURLResponse(
+                url: try #require(request.url),
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            let data = Data("""
+            {
+              "paywall": {
+                "title": "Pro",
+                "enabled": true,
+                "tiers": ["monthly", "yearly"],
+                "subtitle": null
+              }
+            }
+            """.utf8)
+            return (response, data)
+        }
+
+        defer { MockURLProtocol.setRequestHandler(nil) }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let mockedSession = URLSession(configuration: configuration)
+
+        let fetcher = HTTPRemoteConfigFetcher(
+            request: HTTPRemoteConfigRequest(
+                url: try #require(URL(string: "https://example.com/config"))
+            ),
+            session: mockedSession
+        )
+
+        let snapshot = try await fetcher.fetchSnapshot()
+        let paywall = try #require(snapshot.value(for: "paywall")?.objectValue)
+
+        #expect(paywall["title"]?.stringValue == "Pro")
+        #expect(paywall["enabled"]?.boolValue == true)
+        #expect(paywall["subtitle"] == .null)
+
+        let tiers = try #require(paywall["tiers"]?.arrayValue)
+        #expect(tiers.map(\.stringValue) == ["monthly", "yearly"])
+    }
+
+    @Test
     func fetcherAppliesValidationMetadataAndPersistsResponseValidationHeaders() async throws {
         MockURLProtocol.setRequestHandler { request in
             #expect(request.value(forHTTPHeaderField: "If-None-Match") == #""config-v1""#)
