@@ -2,7 +2,7 @@
 
 All notable changes to `RemoteConfigStore` will be documented in this file.
 
-## Unreleased
+## 0.6.1
 
 Structured payload example follow-up.
 
