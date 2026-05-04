@@ -30,6 +30,11 @@ struct ContentView: View {
             title: "Observability",
             summary: "Watch refresh updates through the async stream, lightweight hook, and inspection state API.",
             destination: AnyView(ObservabilityDemoView())
+        ),
+        .init(
+            title: "Structured Payloads",
+            summary: "Decode a nested remote config object into a consumer-defined Decodable model and inspect decode failures.",
+            destination: AnyView(StructuredPayloadDemoView())
         )
     ]
 
