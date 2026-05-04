@@ -190,6 +190,8 @@ It is a strong fit for configuration that should be cached locally, refreshed de
   Example: [Feature Flags scenario](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
 - Remote text or copy that should remain available offline
   Example: [Feature Flags scenario](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/FeatureFlags/FeatureFlagsDemoView.swift)
+- Compact nested objects such as paywall copy, onboarding copy, or grouped operational settings
+  Example: [Structured Payloads scenario](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/StructuredPayloads/StructuredPayloadDemoView.swift)
 - Safety switches and operational config that benefit from stale fallback instead of hard failure
   Example soon
 - Apps that care about startup speed and want cache-first or stale-while-revalidate reads
@@ -300,11 +302,13 @@ Current scenarios:
 - `Observability`
   Code: [ObservabilityDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/Observability/ObservabilityDemoView.swift)
   Shows the async update stream, lightweight update hook, and inspection state API.
+- `Structured Payloads`
+  Code: [StructuredPayloadDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/StructuredPayloads/StructuredPayloadDemoView.swift)
+  Shows nested values, consumer-defined `Decodable` models, raw snapshot inspection, and decode failure handling.
 
 Planned scenarios:
 
 - `Offline Fallback` - Example soon
-- `Structured Payloads` - Example soon
 
 ## Documentation
 
@@ -334,11 +338,12 @@ Implemented:
   Code: [HTTPFetcherDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/HTTPFetcher/HTTPFetcherDemoView.swift)
 - `Observability`
   Code: [ObservabilityDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/Observability/ObservabilityDemoView.swift)
+- `Structured Payloads`
+  Code: [StructuredPayloadDemoView.swift](Example/RemoteConfigStore/RemoteConfigStore/Scenarios/StructuredPayloads/StructuredPayloadDemoView.swift)
 
 Coming later:
 
 - `Offline Fallback` - Example soon
-- `Structured Payloads` - Example soon
 
 If you create a fresh example app manually in the future, recommended Xcode options are:
 

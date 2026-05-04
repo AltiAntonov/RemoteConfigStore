@@ -2,6 +2,18 @@
 
 All notable changes to `RemoteConfigStore` will be documented in this file.
 
+## Unreleased
+
+Structured payload example follow-up.
+
+### Added
+
+- dedicated `Structured Payloads` example scenario in the showcase app
+
+### Changed
+
+- README now links structured payload use cases to the example scenario
+
 ## 0.6.0
 
 Structured payload release.
