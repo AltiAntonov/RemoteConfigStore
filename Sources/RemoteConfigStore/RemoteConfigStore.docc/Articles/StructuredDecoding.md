@@ -40,3 +40,7 @@ This keeps malformed remote configuration visible instead of silently substituti
 ``RemoteConfigValue`` supports booleans, integers, doubles, strings, objects, arrays, and nulls.
 
 The built-in HTTP fetcher decodes those shapes from JSON payloads before the store caches the snapshot.
+
+## Example App
+
+The `Structured Payloads` scenario in the example app demonstrates valid structured decoding, raw snapshot inspection, and malformed payload decode failures.
